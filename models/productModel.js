@@ -1,0 +1,96 @@
+const Mongoose = require("mongoose");
+const Schema = Mongoose.Schema;
+const mongoosePaginate = require("mongoose-paginate");
+const mongooseAggregatePaginate = require("mongoose-aggregate-paginate");
+let status = require('../enums/status');
+var productModel = new Schema({
+        vendorId: {
+                type: Schema.Types.ObjectId,
+                ref: "user"
+        },
+        categoryId: {
+                type: Schema.Types.ObjectId,
+                ref: "category"
+        },
+        subcategoryId: {
+                type: Schema.Types.ObjectId,
+                ref: "subcategory",
+        },
+        productId: {
+                type: String
+        },
+        originalPrice: {
+                type: Number,
+                default: 0
+        },
+        discountPrice: {
+                type: Number,
+                default: 0
+        },
+        discount: {
+                type: Number,
+                default: 0
+        },
+        discountActive: {
+                type: Boolean,
+                default: false
+        },
+        varient: {
+                type: Boolean,
+                default: false
+        },
+        size: {
+                type: Boolean,
+                default: false
+        },
+        productName: {
+                type: String
+        },
+        productImage: {
+                type: Array
+        },
+        description: {
+                type: String,
+        },
+        returnPolicy: {
+                type: String,
+        },
+        reviews: [{
+                user: {
+                        type: Schema.Types.ObjectId,
+                        ref: "user",
+                },
+                name: {
+                        type: String,
+                },
+                rating: {
+                        type: Number,
+                },
+                comment: {
+                        type: String,
+                },
+        }],
+        avgRatingsProduct: {
+                type: Number,
+                default: 0
+        },
+        totalRating: {
+                type: Number,
+                default: 0
+        },
+        stock: {
+                type: Number
+        },
+        SKU: {
+                type: String
+        },
+        status: {
+                type: String,
+                enum: ["OUTOFSTOCK", "STOCK"],
+        },
+        viewOnwebsite: { type: String, default: status.ACTIVE },
+}, { timestamps: true });
+productModel.plugin(mongoosePaginate);
+productModel.plugin(mongooseAggregatePaginate);
+module.exports = Mongoose.model("product", productModel);
+
