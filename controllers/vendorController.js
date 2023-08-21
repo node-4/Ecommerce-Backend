@@ -615,17 +615,20 @@ exports.listProduct = async (req, res) => {
                         if (req.query.subcategoryId) {
                                 query.subcategoryId = req.query.subcategoryId;
                         }
-                        if (req.query.fromDate && !req.query.toDate) {
-                                query.createdAt = { $gte: req.query.fromDate };
+                        if (req.query.search) {
+                                query.productName = req.query.search;
                         }
-                        if (!req.query.fromDate && req.query.toDate) {
-                                query.createdAt = { $lte: req.query.toDate };
+                        if ((fromDate != 'null') && (toDate == 'null')) {
+                                query.createdAt = { $gte: fromDate };
                         }
-                        if (req.query.fromDate && req.query.toDate) {
+                        if ((fromDate == 'null') && (toDate != 'null')) {
+                                query.createdAt = { $lte: toDate };
+                        }
+                        if ((fromDate != 'null') && (toDate != 'null')) {
                                 query.$and = [
-                                        { createdAt: { $gte: req.query.fromDate } },
-                                        { createdAt: { $lte: req.query.toDate } },
-                                ];
+                                        { createdAt: { $gte: fromDate } },
+                                        { createdAt: { $lte: toDate } },
+                                ]
                         }
                         var limit = parseInt(req.query.limit);
                         var options = {
