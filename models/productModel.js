@@ -3,6 +3,7 @@ const Schema = Mongoose.Schema;
 const mongoosePaginate = require("mongoose-paginate");
 const mongooseAggregatePaginate = require("mongoose-aggregate-paginate");
 let status = require('../enums/status');
+const stockStatus = require("../enums/stockStatus");
 var productModel = new Schema({
         vendorId: {
                 type: Schema.Types.ObjectId,
