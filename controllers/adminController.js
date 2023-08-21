@@ -84,13 +84,13 @@ exports.paginateCategoriesSearch = async (req, res) => {
                                 { "name": { $regex: req.query.search, $options: "i" }, },
                         ]
                 }
-                if (fromDate && !toDate) {
+                if ((fromDate != 'null') && (toDate == 'null')) {
                         query.createdAt = { $gte: fromDate };
                 }
-                if (!fromDate && toDate) {
+                if ((fromDate == 'null') && (toDate != 'null')) {
                         query.createdAt = { $lte: toDate };
                 }
-                if (fromDate && toDate) {
+                if ((fromDate != 'null') && (toDate != 'null')) {
                         query.$and = [
                                 { createdAt: { $gte: fromDate } },
                                 { createdAt: { $lte: toDate } },
@@ -167,13 +167,13 @@ exports.paginateSubCategoriesSearch = async (req, res) => {
                                 { "name": { $regex: req.query.search, $options: "i" }, },
                         ]
                 }
-                if (fromDate && !toDate) {
+                if ((fromDate != 'null') && (toDate == 'null')) {
                         query.createdAt = { $gte: fromDate };
                 }
-                if (!fromDate && toDate) {
+                if ((fromDate == 'null') && (toDate != 'null')) {
                         query.createdAt = { $lte: toDate };
                 }
-                if (fromDate && toDate) {
+                if ((fromDate != 'null') && (toDate != 'null')) {
                         query.$and = [
                                 { createdAt: { $gte: fromDate } },
                                 { createdAt: { $lte: toDate } },
