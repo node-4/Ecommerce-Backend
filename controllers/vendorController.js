@@ -181,16 +181,16 @@ exports.signin = async (req, res) => {
                 if (!user) {
                         return res.status(404).send({ message: "user not found ! not registered" });
                 }
-                if (user.kycStatus == kycStatus.APPROVED) {
-                        const isValidPassword = bcrypt.compareSync(password, user.password);
-                        if (!isValidPassword) {
-                                return res.status(401).send({ message: "Wrong password" });
-                        }
-                        const accessToken = jwt.sign({ id: user._id }, authConfig.secret, { expiresIn: authConfig.accessTokenTime, });
-                        return res.status(201).send({ message: "Sign in successfully", data: user, accessToken: accessToken });
-                } else {
-                        return res.status(200).json({ status: 200, msg: "Your kyc verification is pending, please try again later.", userId: newUser._id, });
+                // if (user.kycStatus == kycStatus.APPROVED) {
+                const isValidPassword = bcrypt.compareSync(password, user.password);
+                if (!isValidPassword) {
+                        return res.status(401).send({ message: "Wrong password" });
                 }
+                const accessToken = jwt.sign({ id: user._id }, authConfig.secret, { expiresIn: authConfig.accessTokenTime, });
+                return res.status(201).send({ message: "Sign in successfully", data: user, accessToken: accessToken });
+                // } else {
+                //         return res.status(200).json({ status: 200, msg: "Your kyc verification is pending, please try again later.", userId: user._id, });
+                // }
         } catch (error) {
                 console.error(error);
                 return res.status(500).send({ message: "Server error" + error.message });
