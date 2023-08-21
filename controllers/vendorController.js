@@ -21,12 +21,16 @@ const product = require('../models/productModel');
 const productVarient = require('../models/productVarient');
 exports.registration = async (req, res) => {
         try {
-                const { phone } = req.body;
-                const user = await User.findOne({ phone: phone, userType: userType.VENDOR });
+                const { phone, userType } = req.body;
+                const user = await User.findOne({ phone: phone, userType: userType });
                 if (!user) {
-                        req.body.userType = userType.VENDOR;
                         req.body.refferalCode = await reffralCode();
-                        req.body.kycStatus = kycStatus.PENDING;
+                        if (userType == "VENDOR") {
+                                req.body.kycStatus = kycStatus.PENDING;
+                        }
+                        if (userType == "USER") {
+                                req.body.kycStatus = kycStatus.APPROVED;
+                        }
                         req.body.password = bcrypt.hashSync(req.body.password);
                         const userCreate = await User.create(req.body)
                         return res.status(200).send({ status: 200, message: "Registered successfully ", data: userCreate, });
@@ -101,27 +105,44 @@ exports.getProfile = async (req, res) => {
 };
 exports.socialLogin = async (req, res) => {
         try {
-                const { firstName, lastName, email, phone } = req.body;
-                console.log(req.body);
-                const user = await User.findOne({ $and: [{ $or: [{ email }, { phone }] }, { userType: userType.VENDOR }] });
+                const { firstName, lastName, email, phone, userType } = req.body;
+                const user = await User.findOne({ $and: [{ $or: [{ email }, { phone }] }, { userType: userType }] });
                 if (user) {
-                        if (user.kycStatus == kycStatus.APPROVED) {
-                                jwt.sign({ id: user._id }, authConfig.secret, (err, token) => {
+                        jwt.sign({ id: user._id }, authConfig.secret, (err, accessToken) => {
+                                if (err) {
+                                        return res.status(401).send("Invalid Credentials");
+                                } else {
+                                        let obj = {
+                                                userType: user.userType,
+                                                kycStatus: user.kycStatus,
+                                                accessToken: accessToken
+                                        }
+                                        return res.status(200).json({ status: 200, msg: "Login successfully", data: obj });
+                                }
+                        });
+                } else {
+                        let kycStatus;
+                        if (userType == "VENDOR") {
+                                kycStatus = kycStatus.PENDING;
+                        }
+                        if (userType == "USER") {
+                                kycStatus = kycStatus.APPROVED;
+                        }
+                        let refferalCode = await reffralCode();
+                        const newUser = await User.create({ firstName, lastName, phone, email, kycStatus, refferalCode, userType: userType });
+                        if (newUser) {
+                                jwt.sign({ id: newUser._id }, authConfig.secret, (err, accessToken) => {
                                         if (err) {
                                                 return res.status(401).send("Invalid Credentials");
                                         } else {
-                                                return res.status(200).json({ status: 200, msg: "Login successfully", userId: user._id, token: token, });
+                                                let obj = {
+                                                        userType: newUser.userType,
+                                                        kycStatus: newUser.kycStatus,
+                                                        accessToken: accessToken
+                                                }
+                                                return res.status(200).json({ status: 200, msg: "Login successfully", data: obj });
                                         }
                                 });
-                        } else {
-                                return res.status(200).json({ status: 200, msg: "Your kyc verification is pending, please try again later.", userId: newUser._id, });
-                        }
-                } else {
-                        let kycStatus = kycStatus.PENDING;
-                        let refferalCode = await reffralCode();
-                        const newUser = await User.create({ firstName, lastName, phone, email, kycStatus, refferalCode, userType: userType.VENDOR });
-                        if (newUser) {
-                                return res.status(200).json({ status: 200, msg: "Your kyc verification is pending, please try again later.", userId: newUser._id, });
                         }
                 }
         } catch (err) {
@@ -176,21 +197,22 @@ exports.resetPassword = async (req, res) => {
 };
 exports.signin = async (req, res) => {
         try {
-                const { email, password } = req.body;
-                const user = await User.findOne({ email: email, userType: userType.VENDOR });
+                const { email, password, userType } = req.body;
+                const user = await User.findOne({ email: email, userType: userType });
                 if (!user) {
                         return res.status(404).send({ message: "user not found ! not registered" });
                 }
-                // if (user.kycStatus == kycStatus.APPROVED) {
                 const isValidPassword = bcrypt.compareSync(password, user.password);
                 if (!isValidPassword) {
                         return res.status(401).send({ message: "Wrong password" });
                 }
                 const accessToken = jwt.sign({ id: user._id }, authConfig.secret, { expiresIn: authConfig.accessTokenTime, });
-                return res.status(201).send({ message: "Sign in successfully", data: user, accessToken: accessToken });
-                // } else {
-                //         return res.status(200).json({ status: 200, msg: "Your kyc verification is pending, please try again later.", userId: user._id, });
-                // }
+                let obj = {
+                        userType: user.userType,
+                        kycStatus: user.kycStatus,
+                        accessToken: accessToken
+                }
+                return res.status(201).send({ message: "Login successfully", data: obj });
         } catch (error) {
                 console.error(error);
                 return res.status(500).send({ message: "Server error" + error.message });
