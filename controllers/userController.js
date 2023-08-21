@@ -19,28 +19,49 @@ const Category = require("../models/categoryModel");
 const subCategory = require("../models/subCategoryModel");
 const product = require('../models/productModel');
 const productVarient = require('../models/productVarient');
+exports.listProduct = async (req, res) => {
+        try {
+                let query = {};
+                if (req.query.categoryId) {
+                        query.categoryId = req.query.categoryId;
+                }
+                if (req.query.subcategoryId) {
+                        query.subcategoryId = req.query.subcategoryId;
+                }
+                if (req.query.fromDate && !req.query.toDate) {
+                        query.createdAt = { $gte: req.query.fromDate };
+                }
+                if (!req.query.fromDate && req.query.toDate) {
+                        query.createdAt = { $lte: req.query.toDate };
+                }
+                if (req.query.fromDate && req.query.toDate) {
+                        query.$and = [
+                                { createdAt: { $gte: req.query.fromDate } },
+                                { createdAt: { $lte: req.query.toDate } },
+                        ];
+                }
+                var limit = parseInt(req.query.limit);
+                var options = {
+                        page: parseInt(req.query.page) || 1,
+                        limit: limit || 10,
+                        sort: { createdAt: -1 },
+                        populate: { path: 'categoryId subcategoryId' }
+                }
+                product.paginate(query, options, (transErr, transRes) => {
+                        if (transErr) {
+                                return res.status(501).send({ message: "Internal Server error" + transErr.message });
+                        } else if (transRes.docs.length == 0) {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        } else {
+                                return res.status(200).send({ status: 200, message: "Product data found successfully.", data: transRes });
+                        }
+                })
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        } catch (error) {
+                console.log(error)
+                return res.status(500).send({ message: "Internal Server error" + error.message });
+        }
+};
 const reffralCode = async () => {
         var digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         let OTP = '';
