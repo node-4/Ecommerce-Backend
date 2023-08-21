@@ -84,10 +84,7 @@ var productModel = new Schema({
         SKU: {
                 type: String
         },
-        status: {
-                type: String,
-                enum: ["OUTOFSTOCK", "STOCK"],
-        },
+        stockStatus: { type: String, default: stockStatus.ADEQUATE },
         viewOnwebsite: { type: String, default: status.ACTIVE },
 }, { timestamps: true });
 productModel.plugin(mongoosePaginate);

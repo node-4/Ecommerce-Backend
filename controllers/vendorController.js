@@ -429,7 +429,7 @@ exports.addProduct = async (req, res) => {
                                 if (!findSubCategory) {
                                         return res.status(404).json({ status: 404, message: "No data found", data: {} });
                                 } else {
-                                        let productImage = [], discountPrice, varient, size, viewOnwebsite;
+                                        let productImage = [], discountPrice, varient, size, viewOnwebsite, stockStatus;
                                         if (req.files) {
                                                 for (let i = 0; i < req.files.length; i++) {
                                                         productImage.push(req.files[i].path);
@@ -452,6 +452,13 @@ exports.addProduct = async (req, res) => {
                                                 } else {
                                                         size = false;
                                                         viewOnwebsite = "ACTIVE";
+                                                        if (req.body.stock < 50) {
+                                                                stockStatus = "LOW";
+                                                        } else if (req.body.stock > 50) {
+                                                                stockStatus = "ADEQUATE";
+                                                        } else if (req.body.stock = 0) {
+                                                                stockStatus = "OUTOFSTOCK";
+                                                        }
                                                 }
                                         }
                                         let obj = {
@@ -469,6 +476,8 @@ exports.addProduct = async (req, res) => {
                                                 varient: varient,
                                                 viewOnwebsite: viewOnwebsite,
                                                 size: size,
+                                                stockStatus: stockStatus,
+                                                stock: req.body.stock
                                         }
                                         let saveStore = await product(obj).save();
                                         if (saveStore) {
@@ -516,7 +525,7 @@ exports.editProduct = async (req, res) => {
                                                 return res.status(404).json({ status: 404, message: "No data found", data: {} });
                                         }
                                 }
-                                let productImage = [], discountPrice, varient, size, viewOnwebsite;
+                                let productImage = [], discountPrice, varient, size, viewOnwebsite, stockStatus;
                                 if (req.files) {
                                         for (let i = 0; i < req.files.length; i++) {
                                                 productImage.push(req.files[i].path);
@@ -539,6 +548,13 @@ exports.editProduct = async (req, res) => {
                                         } else {
                                                 size = false;
                                                 viewOnwebsite = "ACTIVE";
+                                                if (req.body.stock < 50) {
+                                                        stockStatus = "LOW";
+                                                } else if (req.body.stock > 50) {
+                                                        stockStatus = "ADEQUATE";
+                                                } else if (req.body.stock = 0) {
+                                                        stockStatus = "OUTOFSTOCK";
+                                                }
                                         }
                                 }
                                 let obj = {
@@ -556,6 +572,8 @@ exports.editProduct = async (req, res) => {
                                         varient: varient || findProduct.varient,
                                         viewOnwebsite: viewOnwebsite || findProduct.viewOnwebsite,
                                         size: size || findProduct.size,
+                                        stockStatus: stockStatus || findProduct.stockStatus,
+                                        stock: req.body.stock || findProduct.stock,
                                 }
                                 let saveStore = await product.findByIdAndUpdate({ _id: findProduct._id }, { $set: obj }, { new: true });
                                 if (saveStore) {
