@@ -276,7 +276,7 @@ exports.getSubCategoryByCategoryId = async (req, res) => {
         try {
                 const data = await subCategory.find({ categoryId: req.params.categoryId }).populate('categoryId');
                 if (!data || data.length === 0) {
-                        return res.status(400).send({ msg: "not found" });
+                        return res.status(200).json({ status: 200, message: "No data found", data: [] });
                 }
                 return res.status(200).json({ status: 200, message: "Sub Category data found.", data: data });
         } catch (err) {
