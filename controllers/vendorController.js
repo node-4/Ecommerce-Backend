@@ -618,16 +618,16 @@ exports.listProduct = async (req, res) => {
                         if (req.query.search) {
                                 query.productName = req.query.search;
                         }
-                        if ((fromDate != 'null') && (toDate == 'null')) {
-                                query.createdAt = { $gte: fromDate };
+                        if ((req.query.fromDate != 'null') && (req.query.toDate == 'null')) {
+                                query.createdAt = { $gte: req.query.fromDate };
                         }
-                        if ((fromDate == 'null') && (toDate != 'null')) {
-                                query.createdAt = { $lte: toDate };
+                        if ((req.query.fromDate == 'null') && (req.query.toDate != 'null')) {
+                                query.createdAt = { $lte: req.query.toDate };
                         }
-                        if ((fromDate != 'null') && (toDate != 'null')) {
+                        if ((req.query.fromDate != 'null') && (req.query.toDate != 'null')) {
                                 query.$and = [
-                                        { createdAt: { $gte: fromDate } },
-                                        { createdAt: { $lte: toDate } },
+                                        { createdAt: { $gte: req.query.fromDate } },
+                                        { createdAt: { $lte: req.query.toDate } },
                                 ]
                         }
                         var limit = parseInt(req.query.limit);
