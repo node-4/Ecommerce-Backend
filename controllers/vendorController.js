@@ -24,18 +24,12 @@ exports.registration = async (req, res) => {
                 const { phone } = req.body;
                 const user = await User.findOne({ phone: phone, userType: userType.VENDOR });
                 if (!user) {
-                        req.body.otp = newOTP.generate(4, { alphabets: false, upperCase: false, specialChar: false, });
-                        req.body.otpExpiration = new Date(Date.now() + 5 * 60 * 1000);
-                        req.body.accountVerification = false;
                         req.body.userType = userType.VENDOR;
-                        req.body.booking = 3;
-                        const userCreate = await User.create(req.body);
-                        let obj = {
-                                id: userCreate._id,
-                                otp: userCreate.otp,
-                                phone: userCreate.phone
-                        }
-                        return res.status(200).send({ status: 200, message: "Registered successfully ", data: obj, });
+                        req.body.refferalCode = await reffralCode();
+                        req.body.kycStatus = kycStatus.PENDING;
+                        req.body.password = bcrypt.hashSync(req.body.password);
+                        const userCreate = await User.create(req.body)
+                        return res.status(200).send({ status: 200, message: "Registered successfully ", data: userCreate, });
                 } else {
                         return res.status(409).send({ status: 409, msg: "Already Exit" });
                 }
@@ -68,25 +62,6 @@ exports.verifyOtp = async (req, res) => {
         } catch (err) {
                 console.log(err.message);
                 return res.status(500).send({ error: "internal server error" + err.message });
-        }
-};
-exports.loginWithPhone = async (req, res) => {
-        try {
-                const { phone } = req.body;
-                const user = await User.findOne({ phone: phone, userType: userType.VENDOR });
-                if (!user) {
-                        return res.status(400).send({ msg: "not found" });
-                }
-                const userObj = {};
-                userObj.otp = newOTP.generate(4, { alphabets: false, upperCase: false, specialChar: false, });
-                userObj.otpExpiration = new Date(Date.now() + 5 * 60 * 1000);
-                userObj.accountVerification = false;
-                const updated = await User.findOneAndUpdate({ phone: phone, userType: userType.VENDOR }, userObj, { new: true, });
-                let obj = { id: updated._id, otp: updated.otp, phone: updated.phone }
-                return res.status(200).send({ status: 200, message: "logged in successfully", data: obj });
-        } catch (error) {
-                console.error(error);
-                return res.status(500).json({ message: "Server error" });
         }
 };
 exports.resendOTP = async (req, res) => {
@@ -130,25 +105,23 @@ exports.socialLogin = async (req, res) => {
                 console.log(req.body);
                 const user = await User.findOne({ $and: [{ $or: [{ email }, { phone }] }, { userType: userType.VENDOR }] });
                 if (user) {
-                        jwt.sign({ id: user._id }, authConfig.secret, (err, token) => {
-                                if (err) {
-                                        return res.status(401).send("Invalid Credentials");
-                                } else {
-                                        return res.status(200).json({ status: 200, msg: "Login successfully", userId: user._id, token: token, });
-                                }
-                        });
-                } else {
-                        let refferalCode = await reffralCode();
-                        const newUser = await User.create({ firstName, lastName, phone, email, refferalCode, userType: userType.VENDOR });
-                        if (newUser) {
-                                jwt.sign({ id: newUser._id }, authConfig.secret, (err, token) => {
+                        if (user.kycStatus == kycStatus.APPROVED) {
+                                jwt.sign({ id: user._id }, authConfig.secret, (err, token) => {
                                         if (err) {
                                                 return res.status(401).send("Invalid Credentials");
                                         } else {
-                                                console.log(token);
-                                                return res.status(200).json({ status: 200, msg: "Login successfully", userId: newUser._id, token: token, });
+                                                return res.status(200).json({ status: 200, msg: "Login successfully", userId: user._id, token: token, });
                                         }
                                 });
+                        } else {
+                                return res.status(200).json({ status: 200, msg: "Your kyc verification is pending, please try again later.", userId: newUser._id, });
+                        }
+                } else {
+                        let kycStatus = kycStatus.PENDING;
+                        let refferalCode = await reffralCode();
+                        const newUser = await User.create({ firstName, lastName, phone, email, kycStatus, refferalCode, userType: userType.VENDOR });
+                        if (newUser) {
+                                return res.status(200).json({ status: 200, msg: "Your kyc verification is pending, please try again later.", userId: newUser._id, });
                         }
                 }
         } catch (err) {
@@ -208,12 +181,16 @@ exports.signin = async (req, res) => {
                 if (!user) {
                         return res.status(404).send({ message: "user not found ! not registered" });
                 }
-                const isValidPassword = bcrypt.compareSync(password, user.password);
-                if (!isValidPassword) {
-                        return res.status(401).send({ message: "Wrong password" });
+                if (user.kycStatus == kycStatus.APPROVED) {
+                        const isValidPassword = bcrypt.compareSync(password, user.password);
+                        if (!isValidPassword) {
+                                return res.status(401).send({ message: "Wrong password" });
+                        }
+                        const accessToken = jwt.sign({ id: user._id }, authConfig.secret, { expiresIn: authConfig.accessTokenTime, });
+                        return res.status(201).send({ message: "Sign in successfully", data: user, accessToken: accessToken });
+                } else {
+                        return res.status(200).json({ status: 200, msg: "Your kyc verification is pending, please try again later.", userId: newUser._id, });
                 }
-                const accessToken = jwt.sign({ id: user._id }, authConfig.secret, { expiresIn: authConfig.accessTokenTime, });
-                return res.status(201).send({ message: "Sign in successfully", data: user, accessToken: accessToken });
         } catch (error) {
                 console.error(error);
                 return res.status(500).send({ message: "Server error" + error.message });
@@ -483,6 +460,173 @@ exports.addProduct = async (req, res) => {
                 return res.status(500).send({ message: "Server error" + error.message });
         }
 }
+exports.viewProduct = async (req, res) => {
+        try {
+                let findProduct = await product.findById({ _id: req.params.id }).populate('categoryId subcategoryId');
+                if (findProduct) {
+                        return res.status(200).send({ status: 200, message: "Product data found successfully.", data: findProduct });
+                } else {
+                        return res.status(404).json({ status: 404, message: "Product not found", data: {} });
+                }
+        } catch (error) {
+                console.log("error", error)
+                return res.status(500).send({ message: "Server error" + error.message });
+        }
+}
+exports.editProduct = async (req, res) => {
+        try {
+                let vendorResult = await User.findOne({ _id: req.user._id, userType: userType.VENDOR });
+                if (!vendorResult) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let findProduct = await product.findById({ _id: req.params.id });
+                        if (findProduct) {
+                                let findCategory, findSubCategory;
+                                if (req.body.categoryId != (null || undefined)) {
+                                        findCategory = await Category.findById({ _id: req.body.categoryId });
+                                        if (!findCategory) {
+                                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                        }
+                                }
+                                if (req.body.subCategoryId != (null || undefined)) {
+                                        findSubCategory = await subCategory.findOne({ _id: req.body.subCategoryId, categoryId: findCategory._id || findProduct.categoryId });
+                                        if (!findSubCategory) {
+                                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                        }
+                                }
+                                let productImage = [], discountPrice, varient, size, viewOnwebsite;
+                                if (req.files) {
+                                        for (let i = 0; i < req.files.length; i++) {
+                                                productImage.push(req.files[i].path);
+                                        }
+                                }
+                                if (req.body.discountActive == "true") {
+                                        discountPrice = req.body.originalPrice - ((req.body.originalPrice * req.body.discount) / 100)
+                                } else {
+                                        discountPrice = 0;
+                                }
+                                if (req.body.varient == "true") {
+                                        varient = true;
+                                        viewOnwebsite = "ACTIVE"
+                                } else {
+                                        varient = false;
+                                        viewOnwebsite = "BLOCK";
+                                        if (req.body.size == "true") {
+                                                size = true;
+                                                viewOnwebsite = "BLOCK"
+                                        } else {
+                                                size = false;
+                                                viewOnwebsite = "ACTIVE";
+                                        }
+                                }
+                                let obj = {
+                                        vendorId: vendorResult._id,
+                                        categoryId: findCategory._id || findProduct.categoryId,
+                                        subcategoryId: findSubCategory._id || findProduct.subcategoryId,
+                                        productName: req.body.productName || findProduct.productName,
+                                        productImage: productImage || findProduct.productImage,
+                                        originalPrice: req.body.originalPrice || findProduct.originalPrice,
+                                        discountPrice: discountPrice || findProduct.discountPrice,
+                                        discountActive: req.body.discountActive || findProduct.discountActive,
+                                        discount: req.body.discount || findProduct.discount,
+                                        description: req.body.description || findProduct.description,
+                                        returnPolicy: req.body.returnPolicy || findProduct.returnPolicy,
+                                        varient: varient || findProduct.varient,
+                                        viewOnwebsite: viewOnwebsite || findProduct.viewOnwebsite,
+                                        size: size || findProduct.size,
+                                }
+                                let saveStore = await product.findByIdAndUpdate({ _id: findProduct._id }, { $set: obj }, { new: true });
+                                if (saveStore) {
+                                        return res.status(200).send({ status: 200, message: "Product update successfully.", data: saveStore });
+                                }
+
+                        } else {
+                                return res.status(404).json({ status: 404, message: "Product not found", data: {} });
+                        }
+                }
+        } catch (error) {
+                console.log("error", error)
+                return res.status(500).send({ message: "Server error" + error.message });
+        }
+}
+exports.deleteProduct = async (req, res) => {
+        try {
+                let findProduct = await product.findById({ _id: req.params.id });
+                if (findProduct) {
+                        let findVarient = await productVarient.find({ productId: findProduct._id });
+                        if (findVarient.length > 0) {
+                                let count = 0, totalVarient = findVarient.length;
+                                for (let i = 0; i < findVarient.length; i++) {
+                                        await productVarient.findByIdAndDelete({ _id: findVarient[i]._id });
+                                        count++;
+                                }
+                                if ((count == totalVarient) == true) {
+                                        let deletes = await product.findByIdAndDelete({ _id: findProduct._id });
+                                        if (deletes) {
+                                                return res.status(200).send({ status: 200, message: "Product delete successfully.", data: {} });
+                                        }
+                                }
+                        } else {
+                                let deletes = await product.findByIdAndDelete({ _id: findProduct._id });
+                                if (deletes) {
+                                        return res.status(200).send({ status: 200, message: "Product delete successfully.", data: {} });
+                                }
+                        }
+                } else {
+                        return res.status(404).json({ status: 404, message: "Product not found", data: {} });
+                }
+        } catch (error) {
+                console.log("error", error)
+                return res.status(500).send({ message: "Server error" + error.message });
+        }
+}
+exports.listProduct = async (req, res) => {
+        try {
+                let vendorData = await User.findOne({ _id: req.user._id, userType: userType.VENDOR });
+                if (!vendorData) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let query = { vendorId: vendorData._id, status: { $ne: "DELETE" } };
+                        if (req.query.categoryId) {
+                                query.categoryId = req.query.categoryId;
+                        }
+                        if (req.query.subcategoryId) {
+                                query.subcategoryId = req.query.subcategoryId;
+                        }
+                        if (req.query.fromDate && !req.query.toDate) {
+                                query.createdAt = { $gte: req.query.fromDate };
+                        }
+                        if (!req.query.fromDate && req.query.toDate) {
+                                query.createdAt = { $lte: req.query.toDate };
+                        }
+                        if (req.query.fromDate && req.query.toDate) {
+                                query.$and = [
+                                        { createdAt: { $gte: req.query.fromDate } },
+                                        { createdAt: { $lte: req.query.toDate } },
+                                ];
+                        }
+                        var limit = parseInt(req.query.limit);
+                        var options = {
+                                page: parseInt(req.query.page) || 1,
+                                limit: limit || 10,
+                                sort: { createdAt: -1 },
+                                populate: { path: 'categoryId subcategoryId' }
+                        }
+                        product.paginate(query, options, (transErr, transRes) => {
+                                if (transErr) {
+                                        return res.status(501).send({ message: "Internal Server error" + transErr.message });
+                                } else if (transRes.docs.length == 0) {
+                                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                } else {
+                                        return res.status(200).send({ status: 200, message: "Product data found successfully.", data: transRes });
+                                }
+                        })
+                }
+        } catch (error) {
+                console.log(error)
+                return res.status(500).send({ message: "Internal Server error" + error.message });
+        }
+};
 exports.addProductVarient = async (req, res) => {
         try {
                 let vendorResult = await User.findOne({ _id: req.user._id, userType: userType.VENDOR });
@@ -528,6 +672,167 @@ exports.addProductVarient = async (req, res) => {
         } catch (error) {
                 console.log("error", error)
                 return res.status(500).send({ message: "Server error" + error.message });
+        }
+};
+exports.viewProductVarient = async (req, res) => {
+        try {
+                let findVarient = await productVarient.findById({ _id: req.params.id }).populate({ path: 'productId', populate: [{ path: 'categoryId', model: 'Category' }, { path: 'subcategoryId', model: 'subcategory' }] }).populate('color')
+                if (!findVarient) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        return res.status(200).send({ status: 200, message: "Product varient data found successfully.", data: findVarient });
+                }
+        } catch (error) {
+                console.log("error", error)
+                return res.status(500).send({ message: "Server error" + error.message });
+        }
+};
+exports.editProductVarient = async (req, res) => {
+        try {
+                let vendorData = await User.findOne({ _id: req.user._id, userType: userType.VENDOR });
+                if (!vendorData) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let unitId, unitInwords;
+                        let findVarient = await productVarient.findById({ _id: req.params.id });
+                        if (!findVarient) {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        } else {
+                                if (req.body.unitId) {
+                                        let findQuantity = await quantityUnit.findOne({ _id: req.body.unitId, vendorId: findVarient.vendorId });
+                                        if (!findQuantity) {
+                                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                        } else {
+                                                unitId = findQuantity._id;
+                                                unitInwords = findQuantity.unit;
+                                        }
+                                } else {
+                                        unitId = findVarient.unitId;
+                                        unitInwords = findVarient.unitInwords
+                                }
+                                let stockStatus;
+                                if (req.body.stock < 50) {
+                                        stockStatus = "LOW";
+                                } else if (req.body.stock > 50) {
+                                        stockStatus = "ADEQUATE";
+                                } else if (req.body.stock = 0) {
+                                        stockStatus = "OUTOFSTOCK";
+                                }
+                                let findProduct = await product.findById({ _id: findVarient.productId });
+                                if (!findProduct) {
+                                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                }
+                                req.body.vendorId = findProduct.vendorId;
+                                req.body.productId = findVarient.productId;
+                                req.body.unitId = unitId;
+                                req.body.unitInwords = unitInwords;
+                                req.body.stock = req.body.stock;
+                                req.body.stockStatus = stockStatus;
+                                let saveProductVarient = await productVarient.findByIdAndUpdate({ _id: findVarient._id }, { $set: req.body }, { new: true })
+                                if (saveProductVarient) {
+                                        return res.status(200).json({ status: 200, message: "Varient update successfully.", data: saveProductVarient });
+                                }
+                        }
+                }
+        } catch (error) {
+                console.log("error", error)
+                return res.status(500).send({ message: "Server error" + error.message });
+        }
+};
+exports.uploadImageInVarient = async (req, res) => {
+        try {
+                let vendorData = await User.findOne({ _id: req.user._id, userType: userType.VENDOR });
+                if (!vendorData) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let findVarient = await productVarient.findById({ _id: req.params.id });
+                        if (!findVarient) {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        } else {
+                                let obj, productImage;
+                                if (req.files) {
+                                        for (let i = 0; i < req.files.length; i++) {
+                                                productImage = req.files[i].filename
+                                                obj = {
+                                                        image: productImage
+                                                }
+                                                await productVarient.findByIdAndUpdate({ _id: findVarient._id }, { $push: { productImages: obj } }, { new: true });
+                                        }
+                                }
+                                let findVarient1 = await productVarient.findById({ _id: req.params.id });
+                                if (findVarient1) {
+                                        return res.status(200).send({ status: 200, message: "Image add in varient successfully..", data: findVarient1 });
+                                }
+                        }
+                }
+        } catch (error) {
+                console.log("error", error)
+                return res.status(500).send({ message: "Server error" + error.message });
+        }
+};
+exports.deleteProductVarient = async (req, res) => {
+        try {
+                let vendorResult = await User.findOne({ _id: req.user._id, userType: userType.VENDOR });
+                if (!vendorResult) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let findVarient = await productVarient.findOne({ _id: req.params.id });
+                        if (!findVarient) {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        } else {
+                                let update = await productVarient.findByIdAndDelete({ _id: findVarient._id });
+                                if (update) {
+                                        return res.status(200).send({ status: 200, message: "Product varient delete successfully.", data: {} });
+                                }
+                        }
+                }
+        } catch (error) {
+                console.log("error", error)
+                return res.status(500).send({ message: "Server error" + error.message });
+        }
+};
+exports.listProductVarient = async (req, res) => {
+        try {
+                let vendorData = await User.findOne({ _id: req.user._id, userType: userType.VENDOR });
+                if (!vendorData) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        if (vendorData.userType == userType.VENDOR) {
+                                if (req.query.productId) {
+                                        let findVarient = await productVarient.find({ vendorId: vendorData._id, productId: req.query.productId, }).populate({ path: 'productId', populate: [{ path: 'categoryId', model: 'Category' }, { path: 'subcategoryId', model: 'subcategory' }] }).populate('color')
+                                        if (findVarient.length == 0) {
+                                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                        } else {
+                                                return res.status(200).send({ status: 200, message: "Product varient data found successfully.", data: findVarient });
+                                        }
+                                } else {
+                                        let findVarient = await productVarient.find({ vendorId: vendorData._id, }).populate({ path: 'productId', populate: [{ path: 'categoryId', model: 'Category' }, { path: 'subcategoryId', model: 'subcategory' }] }).populate('color');
+                                        if (findVarient.length == 0) {
+                                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                        } else {
+                                                return res.status(200).send({ status: 200, message: "Product varient data found successfully.", data: findVarient });
+                                        }
+                                }
+                        } else {
+                                if (req.query.productId) {
+                                        let findVarient = await productVarient.find({ productId: req.query.productId, }).populate({ path: 'productId', populate: [{ path: 'categoryId', model: 'Category' }, { path: 'subcategoryId', model: 'subcategory' }] }).populate('color')
+                                        if (findVarient.length == 0) {
+                                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                        } else {
+                                                return res.status(200).send({ status: 200, message: "Product varient data found successfully.", data: findVarient });
+                                        }
+                                } else {
+                                        let findVarient = await productVarient.find({}).populate({ path: 'productId', populate: [{ path: 'categoryId', model: 'Category' }, { path: 'subcategoryId', model: 'subcategory' }] }).populate('color');
+                                        if (findVarient.length == 0) {
+                                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                        } else {
+                                                return res.status(200).send({ status: 200, message: "Product varient data found successfully.", data: findVarient });
+                                        }
+                                }
+                        }
+                }
+        } catch (error) {
+                return res.status(500).send({ message: "Internal Server error" + error.message });
         }
 };
 exports.addColorInProduct = async (req, res) => {
@@ -596,6 +901,73 @@ exports.addColorInProduct = async (req, res) => {
                 return res.status(500).send({ message: "Server error" + error.message });
         }
 };
+exports.editColorInProduct = async (req, res) => {
+        try {
+                let vendorResult = await User.findOne({ _id: req.user._id, userType: userType.VENDOR });
+                if (!vendorResult) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let findVarient = await productVarient.findById({ _id: req.params.id });
+                        if (!findVarient) {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        } else {
+                                let findColor;
+                                if (req.body.colorId != (null || undefined)) {
+                                        findColor = await color.findById({ _id: req.body.colorId });
+                                        if (!findColor) {
+                                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                        } else {
+                                                let findVarient1 = await productVarient.findOne({ _id: { $ne: findVarient._id }, productId: findVarient.productId, color: findColor._id });
+                                                if (findVarient1) {
+                                                        return res.status(409).json({ status: 409, message: "ALREADY EXIST", data: {} });
+                                                }
+                                        }
+                                } else {
+                                        let productImages = [];
+                                        if (req.files) {
+                                                for (let i = 0; i < req.files.length; i++) {
+                                                        let obj = {
+                                                                image: req.files[i].path
+                                                        }
+                                                        productImages.push(obj);
+                                                }
+                                        }
+                                        if (req.body.size != (null || undefined)) {
+                                                if (req.body.size == "true") {
+                                                        req.body.size = true;
+                                                } else {
+                                                        req.body.size = false;
+                                                        req.body.stock = req.body.stock;
+                                                        if (req.body.stock < 50) {
+                                                                req.body.stockStatus = "LOW";
+                                                        } else if (req.body.stock > 50) {
+                                                                req.body.stockStatus = "ADEQUATE";
+                                                        } else if (req.body.stock = 0) {
+                                                                req.body.stockStatus = "OUTOFSTOCK";
+                                                        }
+                                                }
+                                        }
+                                        req.body.vendorId = findVarient.vendorId;
+                                        req.body.productId = findVarient.productId;
+                                        req.body.color = findColor._id || findVarient.color;
+                                        req.body.productImages = productImages || findVarient.productImages;
+                                        req.body.stockStatus = req.body.stockStatus || findVarient.stockStatus;
+                                        req.body.size = req.body.size || findVarient.size;
+                                        req.body.stock = req.body.stock || findVarient.stock;
+                                        req.body.colorsUnits = req.body.colorsUnits || findVarient.colorsUnits;
+                                        req.body.status = req.body.status || findVarient.status;
+                                        let saveProductVarient = await productVarient.findByIdAndUpdate({ _id: findVarient._id }, { $set: req.body }, { new: true })
+                                        if (saveProductVarient) {
+                                                return res.status(200).send({ status: 200, message: "Add color varient in Product successfully.", data: saveProductVarient });
+                                        }
+                                }
+                        }
+                }
+        } catch (error) {
+                console.log("error", error)
+                return res.status(500).send({ message: "Server error" + error.message });
+        }
+};
 exports.addVarientInColor = async (req, res) => {
         try {
                 let vendorResult = await User.findOne({ _id: req.user._id, userType: userType.VENDOR });
@@ -636,4 +1008,100 @@ exports.addVarientInColor = async (req, res) => {
                 return res.status(500).send({ message: "Server error" + error.message });
         }
 };
-
+exports.editVarientInColor = async (req, res) => {
+        try {
+                let vendorResult = await User.findOne({ _id: req.user._id, userType: userType.VENDOR });
+                if (!vendorResult) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let findVarient = await productVarient.findOne({ _id: req.params.id });
+                        if (!findVarient) {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        } else {
+                                for (let i = 0; i < findVarient.colorsUnits.length; i++) {
+                                        let colorVarientId = findVarient.colorsUnits[i]._id;
+                                        if (req.body.colorVarientId == colorVarientId) {
+                                                let stockStatus;
+                                                req.body.stock = req.body.stock || findVarient.colorsUnits[i].stock;
+                                                if (req.body.stock < 50) {
+                                                        stockStatus = "LOW";
+                                                } else if (req.body.stock > 50) {
+                                                        stockStatus = "ADEQUATE";
+                                                } else if (req.body.stock = 0) {
+                                                        stockStatus = "OUTOFSTOCK";
+                                                }
+                                                req.body.stock = req.body.stock;
+                                                req.body.stockStatus = stockStatus;
+                                                let updates = await productVarient.findOneAndUpdate({ color: findVarient.color, "colorsUnits._id": req.body.colorVarientId }, { $set: { "colorsUnits.$.stock": req.body.stock, "colorsUnits.$.stockStatus": req.body.stockStatus } }, { new: true })
+                                                if (updates) {
+                                                        return res.status(200).send({ status: 200, message: "Color size update successfully..", data: updates });
+                                                }
+                                        }
+                                }
+                        }
+                }
+        } catch (error) {
+                console.log("error", error)
+                return res.status(500).send({ message: "Server error" + error.message });
+        }
+};
+exports.deleteVarientInColor = async (req, res) => {
+        try {
+                let vendorData = await User.findOne({ _id: req.user._id, userType: userType.VENDOR });
+                if (!vendorData) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let findVarient = await productVarient.findOne({ _id: req.params.id });
+                        if (!findVarient) {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        } else {
+                                for (let i = 0; i < findVarient.colorsUnits.length; i++) {
+                                        if (findVarient.colorsUnits[i].unitId == req.query.unitId) {
+                                                await productVarient.findOneAndUpdate({ 'colorsUnits._id': req.query.colorVarientId }, { $pull: { 'colorsUnits': { unitId: req.query.unitId, _id: req.query.colorVarientId } } }, { new: true });
+                                        }
+                                }
+                                const findVarient1 = await productVarient.findById({ _id: req.params.id });
+                                if (findVarient1) {
+                                        return res.status(200).send({ status: 200, message: "Color size delete successfully..", data: findVarient1 });
+                                }
+                        }
+                }
+        } catch (error) {
+                console.log("error", error)
+                return res.status(500).send({ message: "Server error" + error.message });
+        }
+};
+exports.deleteImagefromVarient = async (req, res) => {
+        try {
+                let vendorData = await User.findOne({ _id: req.user._id, userType: userType.VENDOR });
+                if (!vendorData) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        const data = await productVarient.findById({ _id: req.params.id });
+                        if (!data) {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        } else {
+                                for (let i = 0; i < data.productImages.length; i++) {
+                                        if (data.productImages[i]._id == req.query.imageId) {
+                                                await productVarient.findOneAndUpdate({ _id: data._id, 'productImages._id': req.query.imageId }, { $pull: { 'productImages': { _id: req.query.imageId } } }, { new: true });
+                                        }
+                                }
+                                const data1 = await productVarient.findById({ _id: req.params.id });
+                                if (data1) {
+                                        return res.status(200).send({ status: 200, message: "Image delete for varient successfully..", data: data1 });
+                                }
+                        }
+                }
+        } catch (error) {
+                console.log("error", error)
+                return res.status(500).send({ message: "Server error" + error.message });
+        }
+};
+const reffralCode = async () => {
+        var digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let OTP = '';
+        for (let i = 0; i < 9; i++) {
+                OTP += digits[Math.floor(Math.random() * 36)];
+        }
+        return OTP;
+}

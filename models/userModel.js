@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const schema = mongoose.Schema;
+let kycStatus = require('../enums/kycStatus');
 var userSchema = new schema(
         {
                 fullName: {
@@ -35,6 +36,9 @@ var userSchema = new schema(
                         type: String,
                         minLength: 10,
                 },
+                refferalCode: {
+                        type: String,
+                },
                 password: {
                         type: String,
                 },
@@ -47,6 +51,13 @@ var userSchema = new schema(
                 accountVerification: {
                         type: Boolean,
                         default: false,
+                },
+                kycDocumentId: {
+                        type: schema.Types.ObjectId,
+                        ref: "vendorKyc"
+                },
+                kycStatus: {
+                        type: String,
                 },
                 userType: {
                         type: String,
