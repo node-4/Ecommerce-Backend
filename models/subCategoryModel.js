@@ -18,8 +18,7 @@ const schema = new mongoose.Schema(
                         enum: ["Active", "Block"],
                         default: "Active"
                 }
-        },
-        { timeseries: true }
+        }, { timestamps: true }
 );
 schema.plugin(mongoosePaginate);
 schema.plugin(mongooseAggregatePaginate);

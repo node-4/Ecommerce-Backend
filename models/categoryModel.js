@@ -14,8 +14,7 @@ const categorySchema = new mongoose.Schema({
         enum: ["Active", "Block"],
         default: "Active"
     }
-},
-    { timeseries: true }
+}, { timestamps: true }
 );
 categorySchema.plugin(mongoosePaginate);
 categorySchema.plugin(mongooseAggregatePaginate);

@@ -19,6 +19,25 @@ const Category = require("../models/categoryModel");
 const subCategory = require("../models/subCategoryModel");
 const product = require('../models/productModel');
 const productVarient = require('../models/productVarient');
+
+exports.getCategories = async (req, res) => {
+        const categories = await Category.find({ gender: req.params.gender });
+        if (categories.length == 0) {
+                return res.status(404).json({ message: "category not found.", status: 404, data: {} });
+        }
+        res.status(200).json({ status: 200, message: "Category data found.", data: categories });
+};
+exports.getSubCategoryByCategoryId = async (req, res) => {
+        try {
+                const data = await subCategory.find({ categoryId: req.params.categoryId });
+                if (!data || data.length === 0) {
+                        return res.status(404).json({ message: "Sub Category not found.", status: 404, data: {} });
+                }
+                return res.status(200).json({ status: 200, message: "Sub Category data found.", data: data });
+        } catch (err) {
+                return res.status(500).send({ msg: "internal server error ", error: err.message, });
+        }
+};
 exports.listProduct = async (req, res) => {
         try {
                 let query = {};
