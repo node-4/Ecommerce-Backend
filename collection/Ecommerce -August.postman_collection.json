@@ -291,6 +291,11 @@
 									"key": "limit",
 									"value": "",
 									"disabled": true
+								},
+								{
+									"key": "toDate",
+									"value": null,
+									"disabled": true
 								}
 							]
 						}
@@ -312,7 +317,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"phone\": \"7983270589\",\r\n    \"fullName\": \"Rajeev\",\r\n    \"email\": \"rajeev@gmail.com\"\r\n}",
+									"raw": "{\r\n    \"phone\": \"7983270589\",\r\n    \"fullName\": \"Rajeev\",\r\n    \"email\": \"rajeev@gmail.com\",\r\n    \"password\": \"\",\r\n    \"userType\": \"\"\r\n}\r\n// \"USER\", \"VENDOR\"",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -338,24 +343,6 @@
 									}
 								},
 								"url": "localhost:9005/api/v1/vendor/64e084bf9e69455cab7614b2"
-							},
-							"response": []
-						},
-						{
-							"name": "loginWithPhone",
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\r\n    \"phone\": \"7983270589\"\r\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": "localhost:9005/api/v1/vendor/login/WithPhone"
 							},
 							"response": []
 						},
@@ -390,7 +377,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"phone\": \"7983270583\",\r\n    \"fullName\": \"Raju Shrivastav\",\r\n    \"email\": \"raj@gmail.com\"\r\n}",
+									"raw": "{\r\n    \"phone\": \"7983270583\",\r\n    \"fullName\": \"Raju Shrivastav\",\r\n    \"email\": \"raj@gmail.com\",\r\n    \"userType\": \"\"\r\n}\r\n// \"USER\", \"VENDOR\"",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -435,14 +422,14 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"email\": \"raj@gmail.com\",\r\n    \"password\": \"vicky@1234\"\r\n}",
+									"raw": "{\r\n    \"email\": \"rajeev@gmail.com\",\r\n    \"password\": \"vicky@1234\",\r\n    \"userType\": \"VENDOR\"\r\n}\r\n// \"USER\", \"VENDOR\"",
 									"options": {
 										"raw": {
 											"language": "json"
 										}
 									}
 								},
-								"url": "localhost:9005/api/v1/vendor/login/withPassword"
+								"url": "https://ecommerce-backend-ochre-phi.vercel.app/api/v1/vendor/login/withPassword"
 							},
 							"response": []
 						},
@@ -878,10 +865,171 @@
 											"key": "size",
 											"value": "false",
 											"type": "text"
+										},
+										{
+											"key": "stock",
+											"value": "",
+											"type": "text",
+											"disabled": true
 										}
 									]
 								},
 								"url": "localhost:9005/api/v1/vendor/Product/add"
+							},
+							"response": []
+						},
+						{
+							"name": "edit",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {
+										"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZTA4NGJmOWU2OTQ1NWNhYjc2MTRiMiIsImlhdCI6MTY5MjQ0MDQ1NSwiZXhwIjoxNjkyNjk5NjU1fQ.FNhh7U0koNNe_DqzQvy2bHHA4AVOvsCpoQsmKrFZO00"
+									}
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "image",
+											"type": "file",
+											"src": "TZclP4ONk/redshirt.webp"
+										},
+										{
+											"key": "categoryId",
+											"value": "64e071ea7edbfdb7120b243e",
+											"type": "text"
+										},
+										{
+											"key": "subCategoryId",
+											"value": "64e072197edbfdb7120b2443",
+											"type": "text"
+										},
+										{
+											"key": "discountActive",
+											"value": "false",
+											"type": "text"
+										},
+										{
+											"key": "originalPrice",
+											"value": "1499",
+											"type": "text"
+										},
+										{
+											"key": "discount",
+											"value": "56",
+											"type": "text"
+										},
+										{
+											"key": "productName",
+											"value": "H&M",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "Men Solid Slim Fit Easy Iron Shirt",
+											"type": "text"
+										},
+										{
+											"key": "returnPolicy",
+											"value": "Easy 14 days returns and exchanges",
+											"type": "text"
+										},
+										{
+											"key": "varient",
+											"value": "true",
+											"type": "text"
+										},
+										{
+											"key": "size",
+											"value": "false",
+											"type": "text"
+										}
+									]
+								},
+								"url": "localhost:9005/api/v1/vendor/Product/edit/id"
+							},
+							"response": []
+						},
+						{
+							"name": "list",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {
+										"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZTA4NGJmOWU2OTQ1NWNhYjc2MTRiMiIsImlhdCI6MTY5MjQ0MDQ1NSwiZXhwIjoxNjkyNjk5NjU1fQ.FNhh7U0koNNe_DqzQvy2bHHA4AVOvsCpoQsmKrFZO00"
+									}
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:9005/api/v1/vendor/Product/list?page=1&limit=1",
+									"host": [
+										"localhost"
+									],
+									"port": "9005",
+									"path": [
+										"api",
+										"v1",
+										"vendor",
+										"Product",
+										"list"
+									],
+									"query": [
+										{
+											"key": "categoryId",
+											"value": null,
+											"disabled": true
+										},
+										{
+											"key": "subcategoryId",
+											"value": null,
+											"disabled": true
+										},
+										{
+											"key": "fromDate",
+											"value": null,
+											"disabled": true
+										},
+										{
+											"key": "toDate",
+											"value": null,
+											"disabled": true
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "view",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": "localhost:9005/api/v1//vendor/Product/view/64e0a884b99a904f12c37f54"
+							},
+							"response": []
+						},
+						{
+							"name": "delete",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {}
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": "localhost:9005/api/v1/vendor/Product/delete/64e0a884b99a904f12c37f54"
 							},
 							"response": []
 						}
@@ -911,6 +1059,115 @@
 									}
 								},
 								"url": "localhost:9005/api/v1/vendor/ProductVarient/add"
+							},
+							"response": []
+						},
+						{
+							"name": "view",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": "localhost:9005/api/v1/vendor/ProductVarient/view/64e0be9de903c6f68fc6a04a"
+							},
+							"response": []
+						},
+						{
+							"name": "Edit ProductVarient",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {
+										"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZTA4NGJmOWU2OTQ1NWNhYjc2MTRiMiIsImlhdCI6MTY5MjQ0MDQ1NSwiZXhwIjoxNjkyNjk5NjU1fQ.FNhh7U0koNNe_DqzQvy2bHHA4AVOvsCpoQsmKrFZO00"
+									}
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"productId\": \"64e0a884b99a904f12c37f54\",\r\n    \"unitId\": \"64e09c19f9406256ae9cff62\",\r\n    \"stock\": \"1000\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": "localhost:9005/api/v1/vendor/ProductVarient/edit/id"
+							},
+							"response": []
+						},
+						{
+							"name": "Edit ProductVarient Copy",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {
+										"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZTA4NGJmOWU2OTQ1NWNhYjc2MTRiMiIsImlhdCI6MTY5MjQ0MDQ1NSwiZXhwIjoxNjkyNjk5NjU1fQ.FNhh7U0koNNe_DqzQvy2bHHA4AVOvsCpoQsmKrFZO00"
+									}
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"productId\": \"64e0a884b99a904f12c37f54\",\r\n    \"unitId\": \"64e09c19f9406256ae9cff62\",\r\n    \"stock\": \"1000\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": "localhost:9005/api/v1/vendor/ProductVarient/edit/id"
+							},
+							"response": []
+						},
+						{
+							"name": "Edit ProductVarient Copy 2",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {
+										"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZTA4NGJmOWU2OTQ1NWNhYjc2MTRiMiIsImlhdCI6MTY5MjQ0MDQ1NSwiZXhwIjoxNjkyNjk5NjU1fQ.FNhh7U0koNNe_DqzQvy2bHHA4AVOvsCpoQsmKrFZO00"
+									}
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"productId\": \"64e0a884b99a904f12c37f54\",\r\n    \"unitId\": \"64e09c19f9406256ae9cff62\",\r\n    \"stock\": \"1000\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": "localhost:9005/api/v1/vendor/ProductVarient/edit/id"
+							},
+							"response": []
+						},
+						{
+							"name": "delete",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {}
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": "localhost:9005/api/v1/vendor/ProductVarient/delete/64e0be9de903c6f68fc6a04a"
+							},
+							"response": []
+						},
+						{
+							"name": "list",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {
+										"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZTA4NGJmOWU2OTQ1NWNhYjc2MTRiMiIsImlhdCI6MTY5MjQ0MDQ1NSwiZXhwIjoxNjkyNjk5NjU1fQ.FNhh7U0koNNe_DqzQvy2bHHA4AVOvsCpoQsmKrFZO00"
+									}
+								},
+								"method": "GET",
+								"header": [],
+								"url": "localhost:9005/api/v1/vendor/ProductVarient/list"
 							},
 							"response": []
 						},
@@ -964,6 +1221,79 @@
 							"response": []
 						},
 						{
+							"name": "uploadImage in ProductVarient color",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {
+										"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZTA4NGJmOWU2OTQ1NWNhYjc2MTRiMiIsImlhdCI6MTY5MjQ0MDQ1NSwiZXhwIjoxNjkyNjk5NjU1fQ.FNhh7U0koNNe_DqzQvy2bHHA4AVOvsCpoQsmKrFZO00"
+									}
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "image",
+											"type": "file",
+											"src": [
+												"pm-E3Tscm/white.avif",
+												"pm-E3Tscm/white2.avif",
+												"pm-E3Tscm/white1.avif"
+											]
+										}
+									]
+								},
+								"url": "localhost:9005/api/v1/vendor/ProductVarient/uploadImage/id"
+							},
+							"response": []
+						},
+						{
+							"name": "Add ProductVarient color without size",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {
+										"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZTA4NGJmOWU2OTQ1NWNhYjc2MTRiMiIsImlhdCI6MTY5MjQ0MDQ1NSwiZXhwIjoxNjkyNjk5NjU1fQ.FNhh7U0koNNe_DqzQvy2bHHA4AVOvsCpoQsmKrFZO00"
+									}
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "colorId",
+											"value": "64e09d3fa1befb4d735f1286",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"src": [
+												"pm-E3Tscm/white.avif",
+												"pm-E3Tscm/white2.avif",
+												"pm-E3Tscm/white1.avif"
+											]
+										},
+										{
+											"key": "size",
+											"value": "false",
+											"type": "text"
+										},
+										{
+											"key": "stock",
+											"value": "1000",
+											"type": "text"
+										}
+									]
+								},
+								"url": "localhost:9005/api/v1/vendor/ProductColor/edit/id"
+							},
+							"response": []
+						},
+						{
 							"name": "Add ProductVarient color with size",
 							"request": {
 								"auth": {
@@ -1007,6 +1337,44 @@
 							"response": []
 						},
 						{
+							"name": "edit ProductVarient color with size",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {
+										"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZTA4NGJmOWU2OTQ1NWNhYjc2MTRiMiIsImlhdCI6MTY5MjQ0MDQ1NSwiZXhwIjoxNjkyNjk5NjU1fQ.FNhh7U0koNNe_DqzQvy2bHHA4AVOvsCpoQsmKrFZO00"
+									}
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "colorId",
+											"value": "64e0c0b1e903c6f68fc6a068",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"src": [
+												"lQOQ3DWYX/blueshirt2.avif",
+												"lQOQ3DWYX/blueshirt1.avif"
+											]
+										},
+										{
+											"key": "size",
+											"value": "true",
+											"type": "text"
+										}
+									]
+								},
+								"url": "localhost:9005/api/v1/vendor/ProductColor/edit/id"
+							},
+							"response": []
+						},
+						{
 							"name": "VarientInColor",
 							"request": {
 								"auth": {
@@ -1027,6 +1395,104 @@
 									}
 								},
 								"url": "localhost:9005/api/v1/vendor/VarientInColor/add"
+							},
+							"response": []
+						},
+						{
+							"name": "VarientInColor edit",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {
+										"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZTA4NGJmOWU2OTQ1NWNhYjc2MTRiMiIsImlhdCI6MTY5MjQ0MDQ1NSwiZXhwIjoxNjkyNjk5NjU1fQ.FNhh7U0koNNe_DqzQvy2bHHA4AVOvsCpoQsmKrFZO00"
+									}
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"colorVarientId\": \"\",\r\n    \"stock\": \"1000\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": "localhost:9005/api/v1/vendor/VarientInColor/edit/id"
+							},
+							"response": []
+						},
+						{
+							"name": "delete VarientInColor",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {
+										"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZTA4NGJmOWU2OTQ1NWNhYjc2MTRiMiIsImlhdCI6MTY5MjQ0MDQ1NSwiZXhwIjoxNjkyNjk5NjU1fQ.FNhh7U0koNNe_DqzQvy2bHHA4AVOvsCpoQsmKrFZO00"
+									}
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "localhost:9005/api/v1/vendor/VarientInColor/delete/64e0c0c6e903c6f68fc6a070?colorVarientId=64e0c36551bfe547730b110d&unitId=64e09bf4f9406256ae9cff50",
+									"host": [
+										"localhost"
+									],
+									"port": "9005",
+									"path": [
+										"api",
+										"v1",
+										"vendor",
+										"VarientInColor",
+										"delete",
+										"64e0c0c6e903c6f68fc6a070"
+									],
+									"query": [
+										{
+											"key": "colorVarientId",
+											"value": "64e0c36551bfe547730b110d"
+										},
+										{
+											"key": "unitId",
+											"value": "64e09bf4f9406256ae9cff50"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "deleteImage from VarientInColor",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {
+										"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZTA4NGJmOWU2OTQ1NWNhYjc2MTRiMiIsImlhdCI6MTY5MjQ0MDQ1NSwiZXhwIjoxNjkyNjk5NjU1fQ.FNhh7U0koNNe_DqzQvy2bHHA4AVOvsCpoQsmKrFZO00"
+									}
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "localhost:9005/api/v1/vendor/VarientInColor/deleteImage/64e0c0c6e903c6f68fc6a070?imageId",
+									"host": [
+										"localhost"
+									],
+									"port": "9005",
+									"path": [
+										"api",
+										"v1",
+										"vendor",
+										"VarientInColor",
+										"deleteImage",
+										"64e0c0c6e903c6f68fc6a070"
+									],
+									"query": [
+										{
+											"key": "imageId",
+											"value": null
+										}
+									]
+								}
 							},
 							"response": []
 						}
@@ -1146,6 +1612,81 @@
 						"method": "GET",
 						"header": [],
 						"url": "localhost:9005/api/v1/admin/getProfile"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "allCategory by gender",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "localhost:9005/api/v1/user/allCategory/women"
+					},
+					"response": []
+				},
+				{
+					"name": "allSubcategory By  categoryId",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "localhost:9005/api/v1/user/allSubcategoryById/64e071ea7edbfdb7120b243e"
+					},
+					"response": []
+				},
+				{
+					"name": "product list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:9005/api/v1/user/Product/list?categoryId=64e071ea7edbfdb7120b243e&subcategoryId=64e072197edbfdb7120b2443",
+							"host": [
+								"localhost"
+							],
+							"port": "9005",
+							"path": [
+								"api",
+								"v1",
+								"user",
+								"Product",
+								"list"
+							],
+							"query": [
+								{
+									"key": "categoryId",
+									"value": "64e071ea7edbfdb7120b243e"
+								},
+								{
+									"key": "subcategoryId",
+									"value": "64e072197edbfdb7120b2443"
+								},
+								{
+									"key": "fromDate",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "toDate",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "limit",
+									"value": "1",
+									"disabled": true
+								}
+							]
+						}
 					},
 					"response": []
 				}
