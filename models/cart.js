@@ -45,6 +45,41 @@ const DocumentSchema = schema({
                         type: Number
                 },
         }],
+        email: {
+                type: String,
+        },
+        firstName: {
+                type: String,
+        },
+        lastName: {
+                type: String,
+        },
+        phone: {
+                type: String,
+        },
+        address: {
+                type: String,
+        },
+        pincode: {
+                type: Number,
+        },
+        city: {
+                type: String,
+        },
+        state: {
+                type: String,
+        },
+        country: {
+                type: String,
+        },
+        extimatedDelivery: {
+                type: String,
+        },
+        paymentOption: {
+                type: String,
+                enum: ["PrePaid", "PostPaid"],
+                default: "PrePaid"
+        },
         totalAmount: {
                 type: Number,
                 defalut: 0

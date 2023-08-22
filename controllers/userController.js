@@ -20,7 +20,10 @@ const subCategory = require("../models/subCategoryModel");
 const product = require('../models/productModel');
 const productVarient = require('../models/productVarient');
 const cart = require('../models/cart');
-
+const order = require("../models/order/orderModel");
+const userOrders = require("../models/order/userOrders");
+// const stripe = require("stripe")('pk_live_51NYCJcArS6Dr0SQYUKlqAd37V2GZMbxBL6OGM9sZi8CY6nv6H7TUJcjfMiepBmkIdSdn1bUCo855sQuKb66oiM4j00PRLQzvUc'); // live
+const stripe = require("stripe")('sk_test_51NYCJcArS6Dr0SQY0UJ5ZOoiPHQ8R5jNOyCMOkjxpl4BHkG4DcAGAU8tjBw6TSOSfimDSELa6BVyCVSo9CGLXlyX00GkGDAQFo'); // test
 exports.getCategories = async (req, res) => {
         const categories = await Category.find({ gender: req.params.gender });
         if (categories.length == 0) {
@@ -482,7 +485,13 @@ exports.getCart = async (req, res) => {
                 if (!user) {
                         return res.status(404).send({ status: 404, message: "User not found or token expired." });
                 } else {
-                        let findCart = await cart.findOne({ userId: user._id }).populate("userId").populate("products.vendorId").populate("products.categoryId").populate("products.subcategoryId").populate("products.productId").populate("products.productVarientId").populate("products.unitId")
+                        let findCart = await cart.findOne({ userId: user._id }).populate("userId")
+                                .populate("products.vendorId")
+                                .populate("products.categoryId")
+                                .populate("products.subcategoryId")
+                                .populate("products.productId")
+                                .populate({ path: "products.productVarientId", populate: [{ path: "color", model: "color" }] })
+                                .populate("products.unitId")
                         if (findCart) {
                                 return res.status(200).send({ status: 200, message: "Cart detail found.", data: findCart });
                         } else {
@@ -492,6 +501,375 @@ exports.getCart = async (req, res) => {
         } catch (error) {
                 console.log(error);
                 return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.deletecartItem = async (req, res) => {
+        try {
+                const userData = await User.findById(req.user._id);
+                if (!userData) {
+                        return res.status(404).send({ status: 404, message: "User not found or token expired." });
+                } else {
+                        let findCart = await cart.findOne({ userId: userData._id });
+                        if (findCart) {
+                                for (let i = 0; i < findCart.products.length; i++) {
+                                        if (findCart.products.length > 1) {
+                                                if (((findCart.products[i]._id).toString() == req.params.id) == true) {
+                                                        let updateCart = await cart.findByIdAndUpdate({ _id: findCart._id, 'products._id': req.params.id }, { $pull: { 'products': { _id: req.params.id, vendorId: findCart.products[i].vendorId, categoryId: findCart.products[i].categoryId, subcategoryId: findCart.products[i].subcategoryId, productId: findCart.products[i].productId, productVarientId: findCart.products[i].productVarientId, unitId: findCart.products[i].unitId, unitInwords: findCart.products[i].unitInwords, productPrice: findCart.products[i].productPrice, quantity: findCart.products[i].quantity, total: findCart.products[i].total, } } }, { new: true })
+                                                        if (updateCart) {
+                                                                let totalAmount = 0;
+                                                                let totalItem = updateCart.products.length;
+                                                                for (let l = 0; l < updateCart.products.length; l++) {
+                                                                        totalAmount = totalAmount + updateCart.products[l].total;
+                                                                }
+                                                                let b = await cart.findByIdAndUpdate({ _id: updateCart._id }, { $set: { totalAmount: totalAmount, totalItem: totalItem } }, { new: true })
+                                                                return res.status(200).send({ message: "Product delete from cart.", data: b, });
+                                                        }
+                                                }
+                                        } else {
+                                                let updateProject = await cart.findByIdAndDelete({ _id: findCart._id });
+                                                if (updateProject) {
+                                                        let findCart1 = await cart.findOne({ userId: userData._id });
+                                                        if (!findCart1) {
+                                                                return res.status(200).send({ status: 200, message: "Cart detail not found.", data: {} });
+                                                        }
+                                                }
+                                        }
+                                }
+                        } else {
+                                return res.status(200).send({ status: 200, message: "Cart detail not found.", data: {} });
+                        }
+                }
+        } catch (error) {
+                console.log("353====================>", error)
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.deleteCart = async (req, res) => {
+        try {
+                const userData = await User.findById(req.user._id);
+                if (!userData) {
+                        return res.status(404).send({ status: 404, message: "User not found or token expired." });
+                } else {
+                        let findCart = await cart.findOne({ userId: userData._id });
+                        if (!findCart) {
+                                return res.status(200).send({ status: 200, message: "Cart detail not found.", data: {} });
+                        } else {
+                                let update = await cart.findByIdAndDelete({ _id: findCart._id });
+                                if (update) {
+                                        return res.status(200).send({ status: 200, message: "Cart detail not found.", data: {} });
+                                }
+                        }
+                }
+        } catch (error) {
+                console.log("380====================>", error)
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.addAdressToCart = async (req, res) => {
+        try {
+                let userData = await User.findOne({ _id: req.user._id });
+                if (!userData) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let findCart = await cart.findOne({ userId: userData._id })
+                        if (!findCart) {
+                                return res.status(404).json({ status: 404, message: "Cart is empty.", data: {} });
+                        } else {
+                                if (findCart.products.length == 0) {
+                                        return res.status(404).json({ status: 404, message: "First add product in your cart.", data: {} });
+                                } else {
+                                        let update1 = await cart.findByIdAndUpdate({ _id: findCart._id }, { $set: req.body }, { new: true });
+                                        return res.status(200).json({ status: 200, message: "Address add to cart Successfully.", data: update1 })
+                                }
+                        }
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.changePaymentOption = async (req, res) => {
+        try {
+                let userData = await User.findOne({ _id: req.user._id });
+                if (!userData) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let findCart = await cart.findOne({ userId: userData._id })
+                        if (!findCart) {
+                                return res.status(404).json({ status: 404, message: "Cart is empty.", data: {} });
+                        } else {
+                                if (findCart.products.length == 0) {
+                                        return res.status(404).json({ status: 404, message: "First add product in your cart.", data: {} });
+                                } else {
+                                        let update1 = await cart.findByIdAndUpdate({ _id: findCart._id }, { $set: { paymentOption: req.body.paymentOption } }, { new: true });
+                                        return res.status(200).json({ status: 200, message: "Address add to cart Successfully.", data: update1 })
+                                }
+                        }
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.checkout = async (req, res) => {
+        try {
+                console.log(req.user._id);
+                let findOrder = await userOrders.find({ user: req.user._id, orderStatus: "unconfirmed" });
+                if (findOrder.length == 0) {
+                        let findCart = await cart.findOne({ userId: req.user._id });
+                        if (findCart) {
+                                let orderId = await reffralCode(), orderStatus;
+                                if (findCart.paymentOption == "PrePaid") {
+                                        orderStatus = "unconfirmed"
+                                } else {
+                                        orderStatus = "confirmed"
+                                }
+                                for (let i = 0; i < findCart.products.length; i++) {
+                                        let obj = {
+                                                orderId: orderId,
+                                                userId: findCart.userId,
+                                                vendorId: findCart.products[i].vendorId,
+                                                categoryId: findCart.products[i].categoryId,
+                                                subcategoryId: findCart.products[i].subcategoryId,
+                                                productId: findCart.products[i].productId,
+                                                productVarientId: findCart.products[i].productVarientId,
+                                                unitId: findCart.products[i].unitId,
+                                                unitInwords: findCart.products[i].unitInwords,
+                                                productPrice: findCart.products[i].productPrice,
+                                                quantity: findCart.products[i].quantity,
+                                                total: findCart.products[i].total,
+                                                email: findCart.email,
+                                                firstName: findCart.firstName,
+                                                lastName: findCart.lastName,
+                                                phone: findCart.phone,
+                                                address: findCart.address,
+                                                pincode: findCart.pincode,
+                                                city: findCart.city,
+                                                state: findCart.state,
+                                                country: findCart.country,
+                                                extimatedDelivery: findCart.extimatedDelivery,
+                                                paymentOption: findCart.paymentOption,
+                                                orderStatus: orderStatus
+                                        }
+                                        const Data = await order.create(obj);
+                                        if (Data) {
+                                                let findUserOrder = await userOrders.findOne({ orderId: orderId });
+                                                if (findUserOrder) {
+                                                        await userOrders.findByIdAndUpdate({ _id: findUserOrder._id }, { $push: { Orders: Data._id } }, { new: true });
+                                                } else {
+                                                        let Orders = [];
+                                                        Orders.push(Data._id)
+                                                        let obj1 = {
+                                                                userId: findCart.userId,
+                                                                orderId: orderId,
+                                                                Orders: Orders,
+                                                                email: findCart.email,
+                                                                firstName: findCart.firstName,
+                                                                lastName: findCart.lastName,
+                                                                phone: findCart.phone,
+                                                                address: findCart.address,
+                                                                pincode: findCart.pincode,
+                                                                city: findCart.city,
+                                                                state: findCart.state,
+                                                                country: findCart.country,
+                                                                extimatedDelivery: findCart.extimatedDelivery,
+                                                                totalAmount: findCart.totalAmount,
+                                                                totalItem: findCart.totalItem,
+                                                                paymentOption: findCart.paymentOption,
+                                                                orderStatus: orderStatus
+                                                        };
+                                                        await userOrders.create(obj1);
+                                                }
+                                        }
+                                }
+                                let findUserOrder = await userOrders.findOne({ orderId: orderId }).populate('Orders');
+                                res.status(200).json({ status: 200, message: "Order create successfully. ", data: findUserOrder })
+                        }
+                } else {
+                        for (let i = 0; i < findOrder.length; i++) {
+                                await userOrders.findOneAndDelete({ orderId: findOrder[i].orderId });
+                                let findOrders = await order.find({ orderId: findOrder[i].orderId });
+                                if (findOrders.length > 0) {
+                                        for (let j = 0; j < findOrders.length; j++) {
+                                                await order.findByIdAndDelete({ _id: findOrders[j]._id });
+                                        }
+                                }
+                        }
+                        let findCart = await cart.findOne({ userId: req.user._id });
+                        if (findCart) {
+                                let orderId = await reffralCode(), orderStatus;
+                                if (findCart.paymentOption == "PrePaid") {
+                                        orderStatus = "unconfirmed"
+                                } else {
+                                        orderStatus = "confirmed"
+                                }
+                                for (let i = 0; i < findCart.products.length; i++) {
+                                        let obj = {
+                                                orderId: orderId,
+                                                userId: findCart.userId,
+                                                vendorId: findCart.products[i].vendorId,
+                                                categoryId: findCart.products[i].categoryId,
+                                                subcategoryId: findCart.products[i].subcategoryId,
+                                                productId: findCart.products[i].productId,
+                                                productVarientId: findCart.products[i].productVarientId,
+                                                unitId: findCart.products[i].unitId,
+                                                unitInwords: findCart.products[i].unitInwords,
+                                                productPrice: findCart.products[i].productPrice,
+                                                quantity: findCart.products[i].quantity,
+                                                total: findCart.products[i].total,
+                                                email: findCart.email,
+                                                firstName: findCart.firstName,
+                                                lastName: findCart.lastName,
+                                                phone: findCart.phone,
+                                                address: findCart.address,
+                                                pincode: findCart.pincode,
+                                                city: findCart.city,
+                                                state: findCart.state,
+                                                country: findCart.country,
+                                                extimatedDelivery: findCart.extimatedDelivery,
+                                                paymentOption: findCart.paymentOption,
+                                                orderStatus: orderStatus
+                                        }
+                                        const Data = await order.create(obj);
+                                        if (Data) {
+                                                let findUserOrder = await userOrders.findOne({ orderId: orderId });
+                                                if (findUserOrder) {
+                                                        await userOrders.findByIdAndUpdate({ _id: findUserOrder._id }, { $push: { Orders: Data._id } }, { new: true });
+                                                } else {
+                                                        let Orders = [];
+                                                        Orders.push(Data._id)
+                                                        let obj1 = {
+                                                                userId: findCart.userId,
+                                                                orderId: orderId,
+                                                                Orders: Orders,
+                                                                email: findCart.email,
+                                                                firstName: findCart.firstName,
+                                                                lastName: findCart.lastName,
+                                                                phone: findCart.phone,
+                                                                address: findCart.address,
+                                                                pincode: findCart.pincode,
+                                                                city: findCart.city,
+                                                                state: findCart.state,
+                                                                country: findCart.country,
+                                                                extimatedDelivery: findCart.extimatedDelivery,
+                                                                totalAmount: findCart.totalAmount,
+                                                                totalItem: findCart.totalItem,
+                                                                paymentOption: findCart.paymentOption,
+                                                                orderStatus: orderStatus
+                                                        };
+                                                        await userOrders.create(obj1);
+                                                }
+                                        }
+                                }
+                                let findUserOrder = await userOrders.findOne({ orderId: orderId }).populate('Orders');
+                                res.status(200).json({ status: 200, message: "Order create successfully. ", data: findUserOrder })
+                        }
+                }
+        } catch (error) {
+                console.log(error);
+                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.placeOrder = async (req, res) => {
+        try {
+                let findUserOrder = await userOrders.findOne({ orderId: req.params.orderId });
+                if (findUserOrder) {
+                        let line_items = [];
+                        for (let i = 0; i < findUserOrder.Orders.length; i++) {
+                                let findu = await order.findOne({ _id: findUserOrder.Orders[i] });
+                                if (findu) {
+                                        let findProduct = await product.findById({ _id: findu.productId });
+                                        if (findProduct) {
+                                                let price = Number(findu.total);
+                                                console.log(price);
+                                                let obj2 = {
+                                                        price_data: {
+                                                                currency: "inr",
+                                                                product_data: {
+                                                                        name: `${findProduct.productName}`,
+                                                                },
+                                                                unit_amount: `${Math.round(price * 100)}`,
+                                                        },
+                                                        quantity: 1,
+                                                }
+                                                line_items.push(obj2)
+                                        }
+                                }
+                        }
+                        const session = await stripe.checkout.sessions.create({
+                                payment_method_types: ["card"],
+                                success_url: `https://krishwholesale.co.uk/order-success/${findUserOrder.orderId}`,
+                                cancel_url: `https://krishwholesale.co.uk/order-failure/${findUserOrder.orderId}`,
+                                customer_email: req.user.email,
+                                client_reference_id: findUserOrder.orderId,
+                                line_items: line_items,
+                                mode: "payment",
+                        });
+                        res.status(200).json({ status: "success", session: session, });
+                } else {
+                        return res.status(404).json({ message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.getAllOrders = async (req, res, next) => {
+        try {
+                const orders = await userOrders.find({ userId: req.user._id, orderStatus: "confirmed" })
+                        .populate({
+                                path: 'Orders', populate: [
+                                        { path: 'vendorId', model: 'user' },
+                                        { path: 'productVarientId', model: 'productVarient', populate: [{ path: 'color', model: 'color' }] },
+                                        { path: 'categoryId', model: 'Category' },
+                                        { path: 'productId', model: 'product' },
+                                        { path: 'unitId', model: 'quantityUnit' },
+                                        { path: 'subcategoryId', model: 'subcategory' }
+                                ]
+                        })
+                if (orders.length == 0) {
+                        return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
+                }
+                return res.status(200).json({ status: 200, msg: "orders of user", data: orders })
+        } catch (error) {
+                console.log(error);
+                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.getOrders = async (req, res, next) => {
+        try {
+                const orders = await order.find({ userId: req.user._id, orderStatus: "confirmed" }).populate("userId")
+                        .populate("vendorId")
+                        .populate("categoryId")
+                        .populate("subcategoryId")
+                        .populate("productId")
+                        .populate({ path: "productVarientId", populate: [{ path: "color", model: "color" }] })
+                        .populate("unitId");
+                if (orders.length == 0) {
+                        return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
+                }
+                return res.status(200).json({ status: 200, msg: "orders of user", data: orders })
+        } catch (error) {
+                console.log(error);
+                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.getOrderbyId = async (req, res, next) => {
+        try {
+                const orders = await order.findById({ _id: req.params.id }).populate("userId")
+                        .populate("vendorId")
+                        .populate("categoryId")
+                        .populate("subcategoryId")
+                        .populate("productId")
+                        .populate({ path: "productVarientId", populate: [{ path: "color", model: "color" }] })
+                        .populate("unitId");
+                if (!orders) {
+                        return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
+                }
+                return res.status(200).json({ status: 200, msg: "orders of user", data: orders })
+        } catch (error) {
+                console.log(error);
+                res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 const reffralCode = async () => {

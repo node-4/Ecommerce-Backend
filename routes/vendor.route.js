@@ -39,4 +39,5 @@ router.post('/vendor/VarientInColor/add', authJwt.verifyToken, auth.addVarientIn
 router.put('/vendor/VarientInColor/edit/:id', authJwt.verifyToken, auth.editVarientInColor);
 router.delete('/vendor/VarientInColor/delete/:id', authJwt.verifyToken, auth.deleteVarientInColor);
 router.delete('/vendor/VarientInColor/deleteImage/:id', authJwt.verifyToken, auth.deleteImagefromVarient);
+router.get("/vendor/Orders", [authJwt.verifyToken], auth.getOrders);
 module.exports = router;

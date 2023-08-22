@@ -19,6 +19,8 @@ const Category = require("../models/categoryModel");
 const subCategory = require("../models/subCategoryModel");
 const product = require('../models/productModel');
 const productVarient = require('../models/productVarient');
+const order = require("../models/order/orderModel");
+const userOrders = require("../models/order/userOrders");
 exports.registration = async (req, res) => {
         try {
                 const { phone, userType } = req.body;
@@ -1138,6 +1140,24 @@ exports.deleteImagefromVarient = async (req, res) => {
         } catch (error) {
                 console.log("error", error)
                 return res.status(500).send({ message: "Server error" + error.message });
+        }
+};
+exports.getOrders = async (req, res, next) => {
+        try {
+                const orders = await order.find({ vendorId: req.user._id, orderStatus: "confirmed" }).populate("userId")
+                        .populate("vendorId")
+                        .populate("categoryId")
+                        .populate("subcategoryId")
+                        .populate("productId")
+                        .populate({ path: "productVarientId", populate: [{ path: "color", model: "color" }] })
+                        .populate("unitId");
+                if (orders.length == 0) {
+                        return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
+                }
+                return res.status(200).json({ status: 200, msg: "orders of user", data: orders })
+        } catch (error) {
+                console.log(error);
+                res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 const reffralCode = async () => {
