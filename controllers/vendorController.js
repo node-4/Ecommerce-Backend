@@ -436,7 +436,7 @@ exports.addProduct = async (req, res) => {
                                                 }
                                         }
                                         if (req.body.discountActive == "true") {
-                                                discountPrice = req.body.originalPrice - ((req.body.originalPrice * req.body.discount) / 100)
+                                                discountPrice = Number(req.body.originalPrice - ((req.body.originalPrice * req.body.discount) / 100)).toFixed(2)
                                         } else {
                                                 discountPrice = 0;
                                         }
@@ -532,7 +532,7 @@ exports.editProduct = async (req, res) => {
                                         }
                                 }
                                 if (req.body.discountActive == "true") {
-                                        discountPrice = req.body.originalPrice - ((req.body.originalPrice * req.body.discount) / 100)
+                                        discountPrice = Number(req.body.originalPrice - ((req.body.originalPrice * req.body.discount) / 100)).toFixed(2)
                                 } else {
                                         discountPrice = 0;
                                 }
