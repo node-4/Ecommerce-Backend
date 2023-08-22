@@ -1,0 +1,25 @@
+const staticContent = require('../controllers/static.Controller');
+const authJwt = require("../middlewares/authJwt");
+const express = require("express");
+const router = express()
+router.post('/static/createAboutus', [authJwt.verifyToken], staticContent.createAboutUs);
+router.put('/static/aboutUs/:id', [authJwt.verifyToken], staticContent.updateAboutUs);
+router.delete('/static/aboutUs/:id', [authJwt.verifyToken], staticContent.deleteAboutUs);
+router.get('/static/getAboutUs', staticContent.getAboutUs);
+router.get('/static/aboutUs/:id', staticContent.getAboutUsById);
+router.post('/static/createPrivacy', [authJwt.verifyToken], staticContent.createPrivacy);
+router.put('/static/privacy/:id', [authJwt.verifyToken], staticContent.updatePrivacy);
+router.delete('/static/privacy/:id', [authJwt.verifyToken], staticContent.deletePrivacy);
+router.get('/static/getPrivacy', staticContent.getPrivacy);
+router.get('/static/privacy/:id', staticContent.getPrivacybyId);
+router.post('/static/createTerms', [authJwt.verifyToken], staticContent.createTerms);
+router.put('/static/terms/:id', [authJwt.verifyToken], staticContent.updateTerms);
+router.delete('/static/terms/:id', [authJwt.verifyToken], staticContent.deleteTerms);
+router.get('/static/getTerms', staticContent.getTerms);
+router.get('/static/terms/:id', staticContent.getTermsbyId);
+router.post("/static/faq/createFaq", [authJwt.verifyToken], staticContent.createFaq);
+router.put("/static/faq/:id", [authJwt.verifyToken], staticContent.updateFaq);
+router.delete("/static/faq/:id", [authJwt.verifyToken], staticContent.deleteFaq);
+router.get("/static/faq/All", staticContent.getAllFaqs);
+router.get("/static/faq/:id", staticContent.getFaqById);
+module.exports = router;

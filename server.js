@@ -19,11 +19,13 @@ app.get("/", (req, res) => {
 });
 
 const admin = require('./routes/admin.route');
+const static = require('./routes/static.route');
 const user = require('./routes/user.route');
 const vendor = require('./routes/vendor.route');
 app.use('/api/v1', admin);
 app.use('/api/v1', user);
 app.use('/api/v1', vendor);
+app.use('/api/v1', static);
 
 mongoose.Promise = global.Promise;
 mongoose.set("strictQuery", true);
