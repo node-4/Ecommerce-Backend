@@ -7,6 +7,7 @@ const router = express()
 router.get("/user/allCategory/:gender", auth.getCategories);
 router.get("/user/allSubcategoryById/:categoryId", auth.getSubCategoryByCategoryId);
 router.get('/user/Product/list', auth.listProduct);
+router.post("/cart/addtocart", authJwt.verifyToken, auth.addtocart);
 
 
 

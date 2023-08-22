@@ -965,45 +965,45 @@ exports.editColorInProduct = async (req, res) => {
                                                         return res.status(409).json({ status: 409, message: "ALREADY EXIST", data: {} });
                                                 }
                                         }
-                                } else {
-                                        let productImages = [];
-                                        if (req.files) {
-                                                for (let i = 0; i < req.files.length; i++) {
-                                                        let obj = {
-                                                                image: req.files[i].path
-                                                        }
-                                                        productImages.push(obj);
+                                }
+                                let productImages = [];
+                                if (req.files) {
+                                        for (let i = 0; i < req.files.length; i++) {
+                                                let obj = {
+                                                        image: req.files[i].path
                                                 }
-                                        }
-                                        if (req.body.size != (null || undefined)) {
-                                                if (req.body.size == "true") {
-                                                        req.body.size = true;
-                                                } else {
-                                                        req.body.size = false;
-                                                        req.body.stock = req.body.stock;
-                                                        if (req.body.stock < 50) {
-                                                                req.body.stockStatus = "LOW";
-                                                        } else if (req.body.stock > 50) {
-                                                                req.body.stockStatus = "ADEQUATE";
-                                                        } else if (req.body.stock = 0) {
-                                                                req.body.stockStatus = "OUTOFSTOCK";
-                                                        }
-                                                }
-                                        }
-                                        req.body.vendorId = findVarient.vendorId;
-                                        req.body.productId = findVarient.productId;
-                                        req.body.color = findColor._id || findVarient.color;
-                                        req.body.productImages = productImages || findVarient.productImages;
-                                        req.body.stockStatus = req.body.stockStatus || findVarient.stockStatus;
-                                        req.body.size = req.body.size || findVarient.size;
-                                        req.body.stock = req.body.stock || findVarient.stock;
-                                        req.body.colorsUnits = req.body.colorsUnits || findVarient.colorsUnits;
-                                        req.body.status = req.body.status || findVarient.status;
-                                        let saveProductVarient = await productVarient.findByIdAndUpdate({ _id: findVarient._id }, { $set: req.body }, { new: true })
-                                        if (saveProductVarient) {
-                                                return res.status(200).send({ status: 200, message: "Add color varient in Product successfully.", data: saveProductVarient });
+                                                productImages.push(obj);
                                         }
                                 }
+                                if (req.body.size != (null || undefined)) {
+                                        if (req.body.size == "true") {
+                                                req.body.size = true;
+                                        } else {
+                                                req.body.size = false;
+                                                req.body.stock = req.body.stock;
+                                                if (req.body.stock < 50) {
+                                                        req.body.stockStatus = "LOW";
+                                                } else if (req.body.stock > 50) {
+                                                        req.body.stockStatus = "ADEQUATE";
+                                                } else if (req.body.stock = 0) {
+                                                        req.body.stockStatus = "OUTOFSTOCK";
+                                                }
+                                        }
+                                }
+                                req.body.vendorId = findVarient.vendorId;
+                                req.body.productId = findVarient.productId;
+                                req.body.color = findColor._id || findVarient.color;
+                                req.body.productImages = productImages || findVarient.productImages;
+                                req.body.stockStatus = req.body.stockStatus || findVarient.stockStatus;
+                                req.body.size = req.body.size || findVarient.size;
+                                req.body.stock = req.body.stock || findVarient.stock;
+                                req.body.colorsUnits = req.body.colorsUnits || findVarient.colorsUnits;
+                                req.body.status = req.body.status || findVarient.status;
+                                let saveProductVarient = await productVarient.findByIdAndUpdate({ _id: findVarient._id }, { $set: req.body }, { new: true })
+                                if (saveProductVarient) {
+                                        return res.status(200).send({ status: 200, message: "Add color varient in Product successfully.", data: saveProductVarient });
+                                }
+
                         }
                 }
         } catch (error) {
