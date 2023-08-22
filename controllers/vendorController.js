@@ -795,7 +795,7 @@ exports.uploadImageInVarient = async (req, res) => {
                                 let obj, productImage;
                                 if (req.files) {
                                         for (let i = 0; i < req.files.length; i++) {
-                                                productImage = req.files[i].filename
+                                                productImage = req.files[i].path
                                                 obj = {
                                                         image: productImage
                                                 }

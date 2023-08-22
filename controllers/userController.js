@@ -90,65 +90,250 @@ exports.addtocart = async (req, res) => {
                 } else {
                         let findCart = await cart.findOne({ userId: userData._id });
                         if (findCart) {
-                                // let findProduct = await product.findById({ _id: req.body._id });
-                                // if (!findProduct) {
-                                //         return res.status(404).json({ status: 404, message: "No data found", data: {} });
-                                // } else {
-                                //         let findVarient = await productVarient.findById({ _id: req.body.varientId });
-                                //         if (findVarient) {
-                                //                 const found = findCart.products.some(el => ((el.productVarientId).toString() === (findVarient._id).toString()) && ((el.unitId).toString() == (req.body.colorsUnitId).toString()));
-                                //                 if (!found) {
-                                //                         for (let i = 0; i < findVarient.colorsUnits.length; i++) {
-                                //                                 if ((findVarient.colorsUnits[i].unitId).toString() == req.body.colorsUnitId) {
-                                //                                         let total = findVarient.colorsUnits[i].price * req.body.quantity;
-                                //                                         let productPrice = findVarient.colorsUnits[i].price;
-                                //                                         let quantity = req.body.quantity;
-                                //                                         let obj = {
-                                //                                                 storeId: findProduct.storeId,
-                                //                                                 storeCategoryId: findProduct.storeCategoryId,
-                                //                                                 productId: findProduct._id,
-                                //                                                 productVarientId: findVarient._id,
-                                //                                                 unitId: findVarient.colorsUnits[i].unitId,
-                                //                                                 unitInwords: findVarient.colorsUnits[i].unitInwords,
-                                //                                                 productPrice: productPrice,
-                                //                                                 quantity: quantity,
-                                //                                                 total: total,
-                                //                                         }
-                                //                                         let updateCart = await cart.findOneAndUpdate({ _id: findCart._id }, { $push: { ecommerce: obj } }, { new: true });
-                                //                                         if (updateCart) {
-                                //                                                 let totalAmount = 0;
-                                //                                                 let totalItem = updateCart.products.length;
-                                //                                                 for (let l = 0; l < updateCart.products.length; l++) {
-                                //                                                         totalAmount = totalAmount + updateCart.products[l].total;
-                                //                                                 }
-                                //                                                 let b = await cart.findByIdAndUpdate({ _id: updateCart._id }, { $set: { totalAmount: totalAmount, totalItem: totalItem } }, { new: true })
-                                //                                                 response(res, SuccessCode.SUCCESS, b, SuccessMessage.CART_SAVED);
-                                //                                         }
-                                //                                 }
-                                //                         }
-                                //                 } else {
-                                //                         for (let k = 0; k < findVarient.colorsUnits.length; k++) {
-                                //                                 if ((findVarient.colorsUnits[k].unitId).toString() == req.body.colorsUnitId) {
-                                //                                         let total = findVarient.colorsUnits[k].price * req.body.quantity;
-                                //                                         let productPrice = findVarient.colorsUnits[k].price;
-                                //                                         let quantity = req.body.quantity;
-                                //                                         let updateCart = await cart.findOneAndUpdate({ userId: userData._id, 'ecommerce.productVarientId': req.body.varientId, 'ecommerce.unitId': req.body.colorsUnitId }, { $set: { 'ecommerce.$.productPrice': productPrice, 'ecommerce.$.quantity': quantity, 'ecommerce.$.total': total, 'ecommerce.$.productVarientId': findVarient._id } }, { new: true });
-                                //                                         if (updateCart) {
-                                //                                                 let totalAmount = 0;
-                                //                                                 let totalItem = updateCart.products.length;
-                                //                                                 for (let l = 0; l < updateCart.products.length; l++) {
-                                //                                                         totalAmount = totalAmount + updateCart.products[l].total;
-                                //                                                 }
-                                //                                                 let b = await cart.findByIdAndUpdate({ _id: updateCart._id }, { $set: { totalAmount: totalAmount, totalItem: totalItem } }, { new: true })
-                                //                                                 response(res, SuccessCode.SUCCESS, b, SuccessMessage.CART_SAVED);
-                                //                                         }
-                                //                                 }
-                                //                         }
-                                //                 }
-                                //         } else {
-                                //                 return res.status(404).json({ status: 404, message: "No data found", data: {} });
-                                //         }
-                                // }
+                                let findProduct = await product.findById({ _id: req.body.productId });
+                                if (!findProduct) {
+                                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                } else {
+                                        if (findProduct.varient == true) {
+                                                let findVarient = await productVarient.findById({ _id: req.body.varientId });
+                                                if (findVarient) {
+                                                        if (findVarient.size == true) {
+                                                                const found = await findCart.products.some(el => ((el.productVarientId).toString() === (findVarient._id).toString()) && ((el.unitId).toString() == (req.body.colorsUnitId).toString()));
+                                                                if (!found) {
+                                                                        console.log("103=============================");
+                                                                        for (let i = 0; i < findVarient.colorsUnits.length; i++) {
+                                                                                if ((findVarient.colorsUnits[i].unitId).toString() == req.body.colorsUnitId) {
+                                                                                        let price = 0;
+                                                                                        if (findProduct.discountActive == true) {
+                                                                                                price = findProduct.discountPrice;
+                                                                                        } else {
+                                                                                                price = findProduct.originalPrice;
+                                                                                        }
+                                                                                        let obj = {
+                                                                                                vendorId: findProduct.vendorId,
+                                                                                                categoryId: findProduct.categoryId,
+                                                                                                subcategoryId: findProduct.subcategoryId,
+                                                                                                productId: findProduct._id,
+                                                                                                productVarientId: findVarient._id,
+                                                                                                unitId: req.body.colorsUnitId,
+                                                                                                unitInwords: findVarient.colorsUnits[i].unitInwords,
+                                                                                                productPrice: price,
+                                                                                                quantity: req.body.quantity,
+                                                                                                total: price * req.body.quantity,
+                                                                                        }
+                                                                                        let updateCart = await cart.findOneAndUpdate({ _id: findCart._id }, { $push: { products: obj } }, { new: true });
+                                                                                        if (updateCart) {
+                                                                                                let totalAmount = 0;
+                                                                                                let totalItem = updateCart.products.length;
+                                                                                                for (let l = 0; l < updateCart.products.length; l++) {
+                                                                                                        totalAmount = totalAmount + updateCart.products[l].total;
+                                                                                                }
+                                                                                                let b = await cart.findByIdAndUpdate({ _id: updateCart._id }, { $set: { totalAmount: totalAmount, totalItem: totalItem } }, { new: true })
+                                                                                                return res.status(200).send({ message: "Product add to cart.", data: b, });
+                                                                                        }
+                                                                                }
+                                                                        }
+                                                                }
+                                                                // done
+                                                                else {
+                                                                        console.log("133=============================");
+                                                                        for (let k = 0; k < findVarient.colorsUnits.length; k++) {
+                                                                                if ((findVarient.colorsUnits[k].unitId).toString() == req.body.colorsUnitId) {
+                                                                                        let price = 0;
+                                                                                        if (findProduct.discountActive == true) {
+                                                                                                price = findProduct.discountPrice;
+                                                                                        } else {
+                                                                                                price = findProduct.originalPrice;
+                                                                                        }
+                                                                                        let total = price * req.body.quantity;
+                                                                                        let quantity = req.body.quantity;
+                                                                                        let updateCart = await cart.findOneAndUpdate({ userId: userData._id, 'products.productVarientId': req.body.varientId, 'products.unitId': req.body.colorsUnitId }, { $set: { 'products.$.productPrice': price, 'products.$.quantity': quantity, 'products.$.total': total, 'products.$.productVarientId': findVarient._id } }, { new: true });
+                                                                                        if (updateCart) {
+                                                                                                let totalAmount = 0;
+                                                                                                let totalItem = updateCart.products.length;
+                                                                                                for (let l = 0; l < updateCart.products.length; l++) {
+                                                                                                        totalAmount = totalAmount + updateCart.products[l].total;
+                                                                                                }
+                                                                                                let b = await cart.findByIdAndUpdate({ _id: updateCart._id }, { $set: { totalAmount: totalAmount, totalItem: totalItem } }, { new: true })
+                                                                                                return res.status(200).send({ message: "Product add to cart.", data: b, });
+                                                                                        }
+                                                                                }
+                                                                        }
+                                                                }
+                                                        } else {
+                                                                console.log("kkkkkkkkkkkkk");
+                                                                const found = findCart.products.some(el => ((el.productId).toString() === (findProduct._id).toString()));
+                                                                if (!found) {
+                                                                        let price = 0;
+                                                                        if (findProduct.discountActive == true) {
+                                                                                price = findProduct.discountPrice;
+                                                                        } else {
+                                                                                price = findProduct.originalPrice;
+                                                                        }
+                                                                        let obj = {
+                                                                                vendorId: findProduct.vendorId,
+                                                                                categoryId: findProduct.categoryId,
+                                                                                subcategoryId: findProduct.subcategoryId,
+                                                                                productId: findProduct._id,
+                                                                                productVarientId: findVarient._id,
+                                                                                unitId: findVarient.unitId,
+                                                                                unitInwords: findVarient.unitInwords,
+                                                                                productPrice: price,
+                                                                                quantity: req.body.quantity,
+                                                                                total: price * req.body.quantity,
+                                                                        }
+                                                                        let updateCart = await cart.findOneAndUpdate({ _id: findCart._id }, { $push: { products: obj } }, { new: true });
+                                                                        if (updateCart) {
+                                                                                let totalAmount = 0;
+                                                                                let totalItem = updateCart.products.length;
+                                                                                for (let l = 0; l < updateCart.products.length; l++) {
+                                                                                        totalAmount = totalAmount + updateCart.products[l].total;
+                                                                                }
+                                                                                let b = await cart.findByIdAndUpdate({ _id: updateCart._id }, { $set: { totalAmount: totalAmount, totalItem: totalItem } }, { new: true })
+                                                                                return res.status(200).send({ message: "Product add to cart.", data: b, });
+                                                                        }
+                                                                } else {
+                                                                        let price = 0;
+                                                                        if (findProduct.discountActive == true) {
+                                                                                price = findProduct.discountPrice;
+                                                                        } else {
+                                                                                price = findProduct.originalPrice;
+                                                                        }
+                                                                        let total = price * req.body.quantity;
+                                                                        let quantity = req.body.quantity;
+                                                                        let updateCart = await cart.findOneAndUpdate({ userId: userData._id, 'products.productId': req.body.productId, 'products.unitId': findVarient.unitId }, { $set: { 'products.$.productPrice': price, 'products.$.quantity': quantity, 'products.$.total': total } }, { new: true });
+                                                                        if (updateCart) {
+                                                                                let totalAmount = 0;
+                                                                                let totalItem = updateCart.products.length;
+                                                                                for (let l = 0; l < updateCart.products.length; l++) {
+                                                                                        totalAmount = totalAmount + updateCart.products[l].total;
+                                                                                }
+                                                                                let b = await cart.findByIdAndUpdate({ _id: updateCart._id }, { $set: { totalAmount: totalAmount, totalItem: totalItem } }, { new: true })
+                                                                                return res.status(200).send({ message: "Product add to cart.", data: b, });
+                                                                        }
+                                                                }
+                                                        }
+                                                }
+                                                // done
+                                                else {
+                                                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                                }
+                                        }
+                                        // done
+                                        else {
+                                                // done
+                                                if (findProduct.size == true) {
+                                                        console.log("185--------------------");
+                                                        let findVarient = await productVarient.findById({ _id: req.body.varientId });
+                                                        if (findVarient) {
+                                                                const found = findCart.products.some(el => ((el.productVarientId).toString() === (findVarient._id).toString()) && ((el.unitId).toString() == (req.body.colorsUnitId).toString()));
+                                                                if (!found) {
+                                                                        console.log("190--------------------------");
+                                                                        let price = 0;
+                                                                        if (findProduct.discountActive == true) {
+                                                                                price = findProduct.discountPrice;
+                                                                        } else {
+                                                                                price = findProduct.originalPrice;
+                                                                        }
+                                                                        let obj = {
+                                                                                vendorId: findProduct.vendorId,
+                                                                                categoryId: findProduct.categoryId,
+                                                                                subcategoryId: findProduct.subcategoryId,
+                                                                                productId: findProduct._id,
+                                                                                productVarientId: findVarient._id,
+                                                                                unitId: findVarient.unitId,
+                                                                                unitInwords: findVarient.unitInwords,
+                                                                                productPrice: price,
+                                                                                quantity: req.body.quantity,
+                                                                                total: price * req.body.quantity,
+                                                                        }
+                                                                        let updateCart = await cart.findOneAndUpdate({ _id: findCart._id }, { $push: { products: obj } }, { new: true });
+                                                                        if (updateCart) {
+                                                                                let totalAmount = 0;
+                                                                                let totalItem = updateCart.products.length;
+                                                                                for (let l = 0; l < updateCart.products.length; l++) {
+                                                                                        totalAmount = totalAmount + updateCart.products[l].total;
+                                                                                }
+                                                                                let b = await cart.findByIdAndUpdate({ _id: updateCart._id }, { $set: { totalAmount: totalAmount, totalItem: totalItem } }, { new: true })
+                                                                                return res.status(200).send({ message: "Product add to cart.", data: b, });
+                                                                        }
+                                                                } else {
+                                                                        if ((findVarient.unitId).toString() == req.body.colorsUnitId) {
+                                                                                let price = 0;
+                                                                                if (findProduct.discountActive == true) {
+                                                                                        price = findProduct.discountPrice;
+                                                                                } else {
+                                                                                        price = findProduct.originalPrice;
+                                                                                }
+                                                                                let total = price * req.body.quantity;
+                                                                                let quantity = req.body.quantity;
+                                                                                let updateCart = await cart.findOneAndUpdate({ userId: userData._id, 'products.productVarientId': req.body.varientId, 'products.unitId': req.body.colorsUnitId }, { $set: { 'products.$.productPrice': price, 'products.$.quantity': quantity, 'products.$.total': total, 'products.$.productVarientId': findVarient._id } }, { new: true });
+                                                                                if (updateCart) {
+                                                                                        let totalAmount = 0;
+                                                                                        let totalItem = updateCart.products.length;
+                                                                                        for (let l = 0; l < updateCart.products.length; l++) {
+                                                                                                totalAmount = totalAmount + updateCart.products[l].total;
+                                                                                        }
+                                                                                        let b = await cart.findByIdAndUpdate({ _id: updateCart._id }, { $set: { totalAmount: totalAmount, totalItem: totalItem } }, { new: true })
+                                                                                        return res.status(200).send({ message: "Product add to cart.", data: b, });
+                                                                                }
+                                                                        }
+                                                                }
+                                                        } else {
+                                                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                                        }
+                                                } else {
+                                                        console.log("198--------------------");
+                                                        const found = findCart.products.some(el => ((el.productId).toString() === (findProduct._id).toString()));
+                                                        if (!found) {
+                                                                let price = 0;
+                                                                if (findProduct.discountActive == true) {
+                                                                        price = findProduct.discountPrice;
+                                                                } else {
+                                                                        price = findProduct.originalPrice;
+                                                                }
+                                                                let obj = {
+                                                                        vendorId: findProduct.vendorId,
+                                                                        categoryId: findProduct.categoryId,
+                                                                        subcategoryId: findProduct.subcategoryId,
+                                                                        productId: findProduct._id,
+                                                                        productPrice: price,
+                                                                        quantity: req.body.quantity,
+                                                                        total: price * req.body.quantity,
+                                                                }
+                                                                let updateCart = await cart.findOneAndUpdate({ _id: findCart._id }, { $push: { products: obj } }, { new: true });
+                                                                if (updateCart) {
+                                                                        let totalAmount = 0;
+                                                                        let totalItem = updateCart.products.length;
+                                                                        for (let l = 0; l < updateCart.products.length; l++) {
+                                                                                totalAmount = totalAmount + updateCart.products[l].total;
+                                                                        }
+                                                                        let b = await cart.findByIdAndUpdate({ _id: updateCart._id }, { $set: { totalAmount: totalAmount, totalItem: totalItem } }, { new: true })
+                                                                        return res.status(200).send({ message: "Product add to cart.", data: b, });
+                                                                }
+                                                        } else {
+                                                                let price = 0;
+                                                                if (findProduct.discountActive == true) {
+                                                                        price = findProduct.discountPrice;
+                                                                } else {
+                                                                        price = findProduct.originalPrice;
+                                                                }
+                                                                let total = price * req.body.quantity;
+                                                                let quantity = req.body.quantity;
+                                                                let updateCart = await cart.findOneAndUpdate({ userId: userData._id, 'products.productId': req.body.productId }, { $set: { 'products.$.productPrice': price, 'products.$.quantity': quantity, 'products.$.total': total } }, { new: true });
+                                                                if (updateCart) {
+                                                                        let totalAmount = 0;
+                                                                        let totalItem = updateCart.products.length;
+                                                                        for (let l = 0; l < updateCart.products.length; l++) {
+                                                                                totalAmount = totalAmount + updateCart.products[l].total;
+                                                                        }
+                                                                        let b = await cart.findByIdAndUpdate({ _id: updateCart._id }, { $set: { totalAmount: totalAmount, totalItem: totalItem } }, { new: true })
+                                                                        return res.status(200).send({ message: "Product add to cart.", data: b, });
+                                                                }
+                                                        }
+                                                }
+                                        }
+                                }
                         } else {
                                 let findProduct = await product.findById({ _id: req.body.productId });
                                 if (!findProduct) {
@@ -160,33 +345,65 @@ exports.addtocart = async (req, res) => {
                                                         if (findVarient.size == true) {
                                                                 for (let i = 0; i < findVarient.colorsUnits.length; i++) {
                                                                         if ((findVarient.colorsUnits[i].unitId).toString() == req.body.colorsUnitId) {
-                                                                                let total = findVarient.colorsUnits[i].price * req.body.quantity;
+                                                                                let price = 0;
+                                                                                if (findProduct.discountActive == true) {
+                                                                                        price = findProduct.discountPrice;
+                                                                                } else {
+                                                                                        price = findProduct.originalPrice;
+                                                                                }
                                                                                 let obj = {
                                                                                         userId: userData._id,
                                                                                         categoryId: findProduct.categoryId,
                                                                                         products: [{
-                                                                                                storeId: findProduct.storeId,
-                                                                                                storeCategoryId: findProduct.storeCategoryId,
+                                                                                                vendorId: findProduct.vendorId,
+                                                                                                categoryId: findProduct.categoryId,
+                                                                                                subcategoryId: findProduct.subcategoryId,
                                                                                                 productId: findProduct._id,
                                                                                                 productVarientId: findVarient._id,
                                                                                                 unitId: req.body.colorsUnitId,
                                                                                                 unitInwords: findVarient.colorsUnits[i].unitInwords,
-                                                                                                productPrice: findVarient.colorsUnits[i].price,
+                                                                                                productPrice: price,
                                                                                                 quantity: req.body.quantity,
-                                                                                                total: total,
+                                                                                                total: price * req.body.quantity,
                                                                                         }],
-                                                                                        totalAmount: total,
+                                                                                        totalAmount: price * req.body.quantity,
                                                                                         totalItem: 1,
-                                                                                        categoryType: findProduct.categoryType
                                                                                 }
                                                                                 let updateCart = await cart(obj).save()
                                                                                 if (updateCart) {
-                                                                                        response(res, SuccessCode.SUCCESS, updateCart, SuccessMessage.CART_SAVED);
+                                                                                        return res.status(200).send({ message: "Product add to cart.", data: updateCart, });
                                                                                 }
                                                                         }
                                                                 }
                                                         } else {
-
+                                                                let price = 0;
+                                                                if (findProduct.discountActive == true) {
+                                                                        price = findProduct.discountPrice;
+                                                                } else {
+                                                                        price = findProduct.originalPrice;
+                                                                }
+                                                                let obj = {
+                                                                        userId: userData._id,
+                                                                        categoryId: findProduct.categoryId,
+                                                                        products: [{
+                                                                                vendorId: findProduct.vendorId,
+                                                                                categoryId: findProduct.categoryId,
+                                                                                subcategoryId: findProduct.subcategoryId,
+                                                                                productId: findProduct._id,
+                                                                                productVarientId: findVarient._id,
+                                                                                unitId: findVarient.unitId,
+                                                                                unitInwords: findVarient.unitInwords,
+                                                                                productPrice: price,
+                                                                                quantity: req.body.quantity,
+                                                                                total: price * req.body.quantity,
+                                                                        }],
+                                                                        totalAmount: price * req.body.quantity,
+                                                                        totalItem: 1,
+                                                                }
+                                                                let updateCart = await cart(obj).save()
+                                                                if (updateCart) {
+                                                                        return res.status(200).send({ message: "Product add to cart.", data: updateCart, });
+                                                                }
                                                         }
                                                 } else {
                                                         return res.status(404).json({ status: 404, message: "No data found", data: {} });
@@ -257,6 +474,24 @@ exports.addtocart = async (req, res) => {
         } catch (error) {
                 console.log(error)
                 return res.status(500).send({ message: "Internal Server error" + error.message });
+        }
+};
+exports.getCart = async (req, res) => {
+        try {
+                const user = await User.findById(req.user._id);
+                if (!user) {
+                        return res.status(404).send({ status: 404, message: "User not found or token expired." });
+                } else {
+                        let findCart = await cart.findOne({ userId: user._id }).populate("userId").populate("products.vendorId").populate("products.categoryId").populate("products.subcategoryId").populate("products.productId").populate("products.productVarientId").populate("products.unitId")
+                        if (findCart) {
+                                return res.status(200).send({ status: 200, message: "Cart detail found.", data: findCart });
+                        } else {
+                                return res.status(200).send({ status: 200, message: "Cart detail not found.", data: {} });
+                        }
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 const reffralCode = async () => {
