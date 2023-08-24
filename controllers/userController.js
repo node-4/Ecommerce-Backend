@@ -117,7 +117,7 @@ exports.listProduct = async (req, res) => {
                         if (transErr) {
                                 return res.status(501).send({ message: "Internal Server error" + transErr.message });
                         } else if (transRes.docs.length == 0) {
-                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                return res.status(200).send({ status: 200, message: "Product data found successfully.", data: [] });
                         } else {
                                 return res.status(200).send({ status: 200, message: "Product data found successfully.", data: transRes });
                         }
