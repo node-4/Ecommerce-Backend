@@ -481,7 +481,8 @@ exports.addProduct = async (req, res) => {
                                                 size: size,
                                                 stockStatus: stockStatus,
                                                 stock: req.body.stock,
-                                                minimunOrderUnit: req.body.minimunOrderUnit
+                                                minimunOrderUnit: req.body.minimunOrderUnit,
+                                                productType: req.body.productType
                                         }
                                         let saveStore = await product(obj).save();
                                         if (saveStore) {
@@ -580,6 +581,7 @@ exports.editProduct = async (req, res) => {
                                         stockStatus: stockStatus || findProduct.stockStatus,
                                         stock: req.body.stock || findProduct.stock,
                                         minimunOrderUnit: req.body.minimunOrderUnit || findProduct.minimunOrderUnit,
+                                        productType: req.body.productType || findProduct.productType,
                                 }
                                 let saveStore = await product.findByIdAndUpdate({ _id: findProduct._id }, { $set: obj }, { new: true });
                                 if (saveStore) {

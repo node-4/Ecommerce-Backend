@@ -21,6 +21,9 @@ var productModel = new Schema({
                 type: String,
                 enum: ["men", "women", "kid"],
         },
+        productType: {
+                type: String
+        },
         productId: {
                 type: String
         },
