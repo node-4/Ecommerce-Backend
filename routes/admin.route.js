@@ -44,4 +44,6 @@ router.get("/notification/allNotification", authJwt.verifyToken, auth.allNotific
 router.post("/Coupan/addCoupan", [authJwt.verifyToken], auth.addCoupan);
 router.get("/Coupan/listCoupan", [authJwt.verifyToken], auth.listCoupan);
 router.delete("/Coupan/:id", [authJwt.verifyToken], auth.deleteHelpandSupport);
+router.put("/kyc/vendorKycVerification", [authJwt.verifyToken], auth.vendorKycVerification);
+router.get("/admin/KycList", [authJwt.verifyToken], auth.KycList);
 module.exports = router;

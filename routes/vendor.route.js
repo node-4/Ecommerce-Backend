@@ -40,4 +40,6 @@ router.put('/vendor/VarientInColor/edit/:id', authJwt.verifyToken, auth.editVari
 router.delete('/vendor/VarientInColor/delete/:id', authJwt.verifyToken, auth.deleteVarientInColor);
 router.delete('/vendor/VarientInColor/deleteImage/:id', authJwt.verifyToken, auth.deleteImagefromVarient);
 router.get("/vendor/Orders", [authJwt.verifyToken], auth.getOrders);
+router.post("/kyc/addKYC", [authJwt.verifyToken], cpUpload, auth.addKYC);
+router.get("/kyc/KycList", [authJwt.verifyToken], auth.KycList);
 module.exports = router;

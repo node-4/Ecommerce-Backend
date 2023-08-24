@@ -23,18 +23,59 @@ const cart = require('../models/cart');
 const order = require("../models/order/orderModel");
 const userOrders = require("../models/order/userOrders");
 const transactionModel = require("../models/transactionModel");
+
+exports.forgetPassword = async (req, res) => {
+        try {
+                const data = await User.findOne({ email: req.body.email });
+                if (!data) {
+                        return res.status(400).send({ msg: "not found" });
+                } else {
+                        let otp = newOTP.generate(4, { alphabets: false, upperCase: false, specialChar: false, });
+                        let accountVerification = false;
+                        let otpExpiration = new Date(Date.now() + 5 * 60 * 1000);
+                        const updated = await User.findOneAndUpdate({ _id: data._id }, { $set: { accountVerification: accountVerification, otp: otp, otpExpiration: otpExpiration } }, { new: true, });
+                        if (updated) {
+                                return res.status(200).json({ message: "Otp send to your email.", status: 200, data: {} });
+                        }
+                }
+        } catch (err) {
+                console.log(err.message);
+                return res.status(500).send({ msg: "internal server error", error: err.message, });
+        }
+};
+exports.changePassword = async (req, res) => {
+        try {
+                const user = await User.findOne({ email: req.body.email });
+                if (user) {
+                        if (user.otp !== req.body.otp || user.otpExpiration < Date.now()) {
+                                return res.status(400).json({ message: "Invalid OTP" });
+                        }
+                        if (req.body.newPassword == req.body.confirmPassword) {
+                                const updated = await User.findOneAndUpdate({ _id: user._id }, { $set: { password: bcrypt.hashSync(req.body.newPassword), accountVerification: true } }, { new: true });
+                                return res.status(200).send({ message: "Password update successfully.", data: updated, });
+                        } else {
+                                return res.status(501).send({ message: "Password Not matched.", data: {}, });
+                        }
+                } else {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
 exports.getCategories = async (req, res) => {
         const categories = await Category.find({ gender: req.params.gender });
         if (categories.length == 0) {
-                return res.status(404).json({ message: "category not found.", status: 404, data: {} });
+                return res.status(200).json({ status: 200, message: "Category data found.", data: [] });
         }
-        res.status(200).json({ status: 200, message: "Category data found.", data: categories });
+        return res.status(200).json({ status: 200, message: "Category data found.", data: categories });
 };
 exports.getSubCategoryByCategoryId = async (req, res) => {
         try {
                 const data = await subCategory.find({ categoryId: req.params.categoryId });
                 if (!data || data.length === 0) {
-                        return res.status(404).json({ message: "Sub Category not found.", status: 404, data: {} });
+                        return res.status(200).json({ status: 200, message: "Sub Category data found.", data: [] });
                 }
                 return res.status(200).json({ status: 200, message: "Sub Category data found.", data: data });
         } catch (err) {

@@ -4,6 +4,8 @@ const { cpUpload0, upload, upload1, upload2, cpUpload, categoryUpload, subCatego
 const express = require("express");
 const router = express()
 
+router.post("/user/forgetPassword", auth.forgetPassword);
+router.post("/user/changePassword", auth.changePassword);
 router.get("/user/allCategory/:gender", auth.getCategories);
 router.get("/user/allSubcategoryById/:categoryId", auth.getSubCategoryByCategoryId);
 router.get('/user/Product/list', auth.listProduct);

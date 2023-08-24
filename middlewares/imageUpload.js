@@ -27,4 +27,6 @@ const storage9 = new CloudinaryStorage({ cloudinary: cloudinary, params: { folde
 const E4UUpload = multer({ storage: storage9 });
 const storage10 = new CloudinaryStorage({ cloudinary: cloudinary, params: { folder: "ecommerce/offer", allowed_formats: ["jpg", "avif", "webp", "jpeg", "png", "PNG", "xlsx", "xls", "pdf", "PDF"], }, });
 const offerUpload = multer({ storage: storage10 });
-module.exports = { productUpload, bannerUpload, upload, blogUpload, aboutusUpload, subCategoryUpload, categoryUpload, serviceUpload, E4UUpload, userProfileUpload, BrandUpload, offerUpload };
+const storage11 = multer({ storage: storage })
+var cpUpload = storage11.fields([{ name: 'aadhar', maxCount: 1 }, { name: 'panCard', maxCount: 1 }, { name: 'gstNO', maxCount: 1 }, { name: 'addressProof', maxCount: 1 }]);
+module.exports = { productUpload, bannerUpload, upload, blogUpload, cpUpload, aboutusUpload, subCategoryUpload, categoryUpload, serviceUpload, E4UUpload, userProfileUpload, BrandUpload, offerUpload };

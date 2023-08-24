@@ -4,6 +4,7 @@ const authConfig = require("../configs/auth.config");
 const User = require("../models/userModel");
 const Category = require("../models/categoryModel");
 const subCategory = require("../models/subCategoryModel");
+const kycStatus = require('../enums/kycStatus');
 const transactionModel = require("../models/transactionModel");
 const order = require("../models/order/orderModel");
 const banner = require("../models/banner");
@@ -11,6 +12,7 @@ const helpandSupport = require("../models/helpAndSupport");
 const contact = require("../models/contactDetail");
 const notification = require("../models/notification");
 const Coupan = require('../models/Coupan')
+const vendorKyc = require("../models/vendorKyc");
 exports.registration = async (req, res) => {
         const { phone, email } = req.body;
         try {
@@ -727,6 +729,71 @@ exports.deleteCoupan = async (req, res) => {
                 return res.status(200).json({ message: "Coupan  delete.", status: 200, data: {} });
         } catch (err) {
                 return res.status(500).send({ msg: "internal server error", error: err.message, });
+        }
+};
+exports.vendorKycVerification = async (req, res) => {
+        try {
+                let userData = await User.findOne({ _id: req.user._id });
+                if (!userData) {
+                        return res.status(404).json({ status: 404, message: "User not found" });
+                } else {
+                        let findVendorKyc = await vendorKyc.findOne({ _id: req.body.kycId });
+                        if (!findVendorKyc) {
+                                return res.status(404).json({ message: "Kyc document not found.", status: 404, data: {} });
+                        } else {
+                                let updateKyc;
+                                if (req.body.kycStatus == kycStatus.APPROVED) {
+                                        updateKyc = await vendorKyc.findByIdAndUpdate({ _id: findVendorKyc._id }, { $set: { kycStatus: kycStatus.APPROVED } }, { new: true });
+                                        if (updateKyc) {
+                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyc.vendorId }, { $set: { kycStatus: kycStatus.APPROVED } }, { new: true });
+                                                let findVendorKyc1 = await vendorKyc.findOne({ _id: req.body.kycId });
+                                                return res.status(200).json({ message: "Kyc verification update successfully.", status: 200, data: findVendorKyc1 });
+                                        }
+                                } else if (req.body.kycStatus == kycStatus.REJECT) {
+                                        updateKyc = await vendorKyc.findByIdAndUpdate({ _id: findVendorKyc._id }, { $set: { kycStatus: kycStatus.REJECT } }, { new: true });
+                                        if (updateKyc) {
+                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyc.vendorId }, { $set: { kycStatus: kycStatus.REJECT } }, { new: true });
+                                                let findVendorKyc1 = await vendorKyc.findOne({ _id: req.body.kycId });
+                                                return res.status(200).json({ message: "Kyc verification update successfully.", status: 200, data: findVendorKyc1 });
+                                        }
+                                } else if (req.body.kycStatus == kycStatus.PENDING) {
+                                        updateKyc = await vendorKyc.findByIdAndUpdate({ _id: findVendorKyc._id }, { $set: { kycStatus: kycStatus.PENDING } }, { new: true });
+                                        if (updateKyc) {
+                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyc.vendorId }, { $set: { kycStatus: kycStatus.PENDING } }, { new: true });
+                                                let findVendorKyc1 = await vendorKyc.findOne({ _id: req.body.kycId });
+                                                return res.status(200).json({ message: "Kyc verification update successfully.", status: 200, data: findVendorKyc1 });
+                                        }
+                                } else if (req.body.kycStatus == kycStatus.UPLOADED) {
+                                        updateKyc = await vendorKyc.findByIdAndUpdate({ _id: findVendorKyc._id }, { $set: { kycStatus: kycStatus.UPLOADED } }, { new: true });
+                                        if (updateKyc) {
+                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyc.vendorId }, { $set: { kycStatus: kycStatus.UPLOADED } }, { new: true });
+                                                let findVendorKyc1 = await vendorKyc.findOne({ _id: req.body.kycId });
+                                                return res.status(200).json({ message: "Kyc verification update successfully.", status: 200, data: findVendorKyc1 });
+                                        }
+                                }
+                        }
+
+                }
+        } catch (error) {
+                return res.status(500).send({ msg: "internal server error", error: error, });
+        }
+};
+exports.KycList = async (req, res) => {
+        try {
+                const vendorData = await User.findOne({ _id: req.user._id, });
+                if (!vendorData) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let driverResult = await vendorKyc.find({}).sort({ "createAt": -1 })
+                        if (driverResult.length == 0) {
+                                return res.status(200).json({ status: 200, msg: "Kyc data fetch.", data: [] })
+                        } else {
+                                return res.status(200).json({ status: 20, msg: "Kyc data fetch.", data: driverResult })
+                        }
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 const reffralCode = async () => {
