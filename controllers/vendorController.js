@@ -467,6 +467,7 @@ exports.addProduct = async (req, res) => {
                                                 vendorId: vendorResult._id,
                                                 categoryId: findCategory._id,
                                                 subcategoryId: findSubCategory._id,
+                                                gender: findCategory.gender,
                                                 productName: req.body.productName,
                                                 productImage: productImage,
                                                 originalPrice: req.body.originalPrice,
@@ -479,7 +480,8 @@ exports.addProduct = async (req, res) => {
                                                 viewOnwebsite: viewOnwebsite,
                                                 size: size,
                                                 stockStatus: stockStatus,
-                                                stock: req.body.stock
+                                                stock: req.body.stock,
+                                                minimunOrderUnit: req.body.minimunOrderUnit
                                         }
                                         let saveStore = await product(obj).save();
                                         if (saveStore) {
@@ -563,6 +565,7 @@ exports.editProduct = async (req, res) => {
                                         vendorId: vendorResult._id,
                                         categoryId: findCategory._id || findProduct.categoryId,
                                         subcategoryId: findSubCategory._id || findProduct.subcategoryId,
+                                        gender: findCategory.gender || findProduct.gender,
                                         productName: req.body.productName || findProduct.productName,
                                         productImage: productImage || findProduct.productImage,
                                         originalPrice: req.body.originalPrice || findProduct.originalPrice,
@@ -576,6 +579,7 @@ exports.editProduct = async (req, res) => {
                                         size: size || findProduct.size,
                                         stockStatus: stockStatus || findProduct.stockStatus,
                                         stock: req.body.stock || findProduct.stock,
+                                        minimunOrderUnit: req.body.minimunOrderUnit || findProduct.minimunOrderUnit,
                                 }
                                 let saveStore = await product.findByIdAndUpdate({ _id: findProduct._id }, { $set: obj }, { new: true });
                                 if (saveStore) {
@@ -1160,6 +1164,7 @@ exports.getOrders = async (req, res, next) => {
                 res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
+
 const reffralCode = async () => {
         var digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         let OTP = '';

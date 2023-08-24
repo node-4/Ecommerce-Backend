@@ -15,20 +15,16 @@ router.put("/cart/addAdressToCart", [authJwt.verifyToken], auth.addAdressToCart)
 router.put("/cart/changePaymentOption", [authJwt.verifyToken], auth.changePaymentOption);
 router.post("/cart/checkout", authJwt.verifyToken, auth.checkout);
 router.post("/cart/placeOrder/:orderId", [authJwt.verifyToken], auth.placeOrder);
+router.get("/cart/successOrder/:orderId", [authJwt.verifyToken], auth.successOrder);
+router.get("/cart/successOrderwithWallet/:orderId", [authJwt.verifyToken], auth.successOrderwithWallet);
+router.get("/cart/cancelOrder/:orderId", [authJwt.verifyToken], auth.cancelOrder);
 router.get("/order/allOrders", [authJwt.verifyToken], auth.getAllOrders);
 router.get("/order/Orders", [authJwt.verifyToken], auth.getOrders);
 router.get("/order/viewOrder/:id", [authJwt.verifyToken], auth.getOrderbyId);
-
-
-
-
-
-
-
-
-
-
-
-
-
+router.get("/transaction/allTransactionUser", [authJwt.verifyToken], auth.allTransactionUser);
+router.get("/transaction/allcreditTransactionUser", [authJwt.verifyToken], auth.allcreditTransactionUser);
+router.get("/transaction/allDebitTransactionUser", [authJwt.verifyToken], auth.allDebitTransactionUser);
+router.post('/wallet/addWallet', [authJwt.verifyToken], auth.addMoney);
+router.get('/wallet/getwallet', [authJwt.verifyToken], auth.getWallet);
+router.post('/wallet/sendMoney', [authJwt.verifyToken], auth.sendMoney);
 module.exports = router;

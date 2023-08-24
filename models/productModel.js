@@ -17,6 +17,10 @@ var productModel = new Schema({
                 type: Schema.Types.ObjectId,
                 ref: "subcategory",
         },
+        gender: {
+                type: String,
+                enum: ["men", "women", "kid"],
+        },
         productId: {
                 type: String
         },
@@ -71,6 +75,10 @@ var productModel = new Schema({
                         type: String,
                 },
         }],
+        minimunOrderUnit: {
+                type: Number,
+                default: 0
+        },
         avgRatingsProduct: {
                 type: Number,
                 default: 0

@@ -22,8 +22,7 @@ const productVarient = require('../models/productVarient');
 const cart = require('../models/cart');
 const order = require("../models/order/orderModel");
 const userOrders = require("../models/order/userOrders");
-// const stripe = require("stripe")('pk_live_51NYCJcArS6Dr0SQYUKlqAd37V2GZMbxBL6OGM9sZi8CY6nv6H7TUJcjfMiepBmkIdSdn1bUCo855sQuKb66oiM4j00PRLQzvUc'); // live
-const stripe = require("stripe")('sk_test_51NYCJcArS6Dr0SQY0UJ5ZOoiPHQ8R5jNOyCMOkjxpl4BHkG4DcAGAU8tjBw6TSOSfimDSELa6BVyCVSo9CGLXlyX00GkGDAQFo'); // test
+const transactionModel = require("../models/transactionModel");
 exports.getCategories = async (req, res) => {
         const categories = await Category.find({ gender: req.params.gender });
         if (categories.length == 0) {
@@ -50,6 +49,9 @@ exports.listProduct = async (req, res) => {
                 }
                 if (req.query.subcategoryId) {
                         query.subcategoryId = req.query.subcategoryId;
+                }
+                if (req.query.gender) {
+                        query.gender = req.query.gender;
                 }
                 if (req.query.fromDate && !req.query.toDate) {
                         query.createdAt = { $gte: req.query.fromDate };
@@ -683,7 +685,7 @@ exports.checkout = async (req, res) => {
                                         }
                                 }
                                 let findUserOrder = await userOrders.findOne({ orderId: orderId }).populate('Orders');
-                                res.status(200).json({ status: 200, message: "Order create successfully. ", data: findUserOrder })
+                                return res.status(200).json({ status: 200, message: "Order create successfully. ", data: findUserOrder })
                         }
                 } else {
                         for (let i = 0; i < findOrder.length; i++) {
@@ -762,12 +764,12 @@ exports.checkout = async (req, res) => {
                                         }
                                 }
                                 let findUserOrder = await userOrders.findOne({ orderId: orderId }).populate('Orders');
-                                res.status(200).json({ status: 200, message: "Order create successfully. ", data: findUserOrder })
+                                return res.status(200).json({ status: 200, message: "Order create successfully. ", data: findUserOrder })
                         }
                 }
         } catch (error) {
                 console.log(error);
-                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 exports.placeOrder = async (req, res) => {
@@ -805,13 +807,135 @@ exports.placeOrder = async (req, res) => {
                                 line_items: line_items,
                                 mode: "payment",
                         });
-                        res.status(200).json({ status: "success", session: session, });
+                        return res.status(200).json({ status: "success", session: session, });
                 } else {
                         return res.status(404).json({ message: "No data found", data: {} });
                 }
         } catch (error) {
                 console.log(error);
-                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.cancelOrder = async (req, res) => {
+        try {
+                let findUserOrder = await userOrders.findOne({ orderId: req.params.orderId });
+                if (findUserOrder) {
+                        return res.status(201).json({ message: "Payment failed.", status: 201, orderId: req.params.orderId });
+                } else {
+                        return res.status(404).json({ message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.successOrder = async (req, res) => {
+        try {
+                let findUserOrder = await userOrders.findOne({ orderId: req.params.orderId });
+                if (findUserOrder) {
+                        const user = await User.findById({ _id: findUserOrder.userId });
+                        if (!user) {
+                                return res.status(404).send({ status: 404, message: "User not found or token expired." });
+                        }
+                        await userOrders.findByIdAndUpdate({ _id: findUserOrder._id }, { $set: { orderStatus: "confirmed", paymentStatus: "paid" } }, { new: true });
+                        let obj1 = { user: findUserOrder.userId, orderId: findUserOrder.orderId, amount: findUserOrder.paidAmount, paymentMode: req.body.paymentMode, type: "Debit", Status: "paid", }
+                        await transactionModel.create(obj1);
+                        for (let i = 0; i < findUserOrder.Orders.length; i++) {
+                                let findu = await order.findOne({ _id: findUserOrder.Orders[i] });
+                                if (findu) {
+                                        let updateConfirm = await order.findByIdAndUpdate({ _id: findu._id }, { $set: { orderStatus: "confirmed", paymentStatus: "paid" } }, { new: true });
+                                        if (updateConfirm) {
+                                                let userData = await User.findOne({ _id: updateConfirm.vendorId });
+                                                if (userData) {
+                                                        let wallet = await User.findByIdAndUpdate({ _id: userData._id }, { $set: { wallet: userData.wallet + updateConfirm.total } }, { new: true });
+                                                        if (wallet) {
+                                                                let obj = {
+                                                                        user: userData._id,
+                                                                        orderId: updateConfirm.orderId,
+                                                                        amount: updateConfirm.total,
+                                                                        paymentMode: req.body.paymentMode,
+                                                                        type: "Credit",
+                                                                        Status: "paid",
+                                                                }
+                                                                await transactionModel.create(obj);
+                                                        }
+                                                }
+                                        }
+                                }
+                        }
+                        let deleteCart = await cart.findOneAndDelete({ userId: findUserOrder.userId });
+                        if (deleteCart) {
+                                return res.status(200).json({ message: "Payment success.", status: 200, data: {} });
+                        }
+                } else {
+                        return res.status(404).json({ message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.successOrderwithWallet = async (req, res) => {
+        try {
+                let findUserOrder = await userOrders.findOne({ orderId: req.params.orderId });
+                if (findUserOrder) {
+                        const user = await User.findById({ _id: findUserOrder.userId });
+                        if (!user) {
+                                return res.status(404).send({ status: 404, message: "User not found or token expired." });
+                        }
+                        let userData1 = await User.findOne({ _id: findUserOrder.userId });
+                        if (userData1.wallet >= findUserOrder.paidAmount) {
+                                await userOrders.findByIdAndUpdate({ _id: findUserOrder._id }, { $set: { orderStatus: "confirmed", paymentStatus: "paid" } }, { new: true });
+                                if (userData1) {
+                                        let wallet = await User.findByIdAndUpdate({ _id: userData1._id }, { $set: { wallet: userData1.wallet - findUserOrder.paidAmount } }, { new: true });
+                                        if (wallet) {
+                                                let obj1 = {
+                                                        user: findUserOrder.userId,
+                                                        orderId: findUserOrder.orderId,
+                                                        amount: findUserOrder.paidAmount,
+                                                        paymentMode: req.body.paymentMode,
+                                                        type: "Debit",
+                                                        Status: "paid",
+                                                }
+                                                await transactionModel.create(obj1);
+                                        }
+                                        for (let i = 0; i < findUserOrder.Orders.length; i++) {
+                                                let findu = await order.findOne({ _id: findUserOrder.Orders[i] });
+                                                if (findu) {
+                                                        let updateConfirm = await order.findByIdAndUpdate({ _id: findu._id }, { $set: { orderStatus: "confirmed", paymentStatus: "paid" } }, { new: true });
+                                                        if (updateConfirm) {
+                                                                let userData = await User.findOne({ _id: updateConfirm.vendorId });
+                                                                if (userData) {
+                                                                        let wallet = await User.findByIdAndUpdate({ _id: userData._id }, { $set: { wallet: userData.wallet + updateConfirm.total } }, { new: true });
+                                                                        if (wallet) {
+                                                                                let obj = {
+                                                                                        user: userData._id,
+                                                                                        orderId: updateConfirm.orderId,
+                                                                                        amount: updateConfirm.total,
+                                                                                        paymentMode: req.body.paymentMode,
+                                                                                        type: "Credit",
+                                                                                        Status: "paid",
+                                                                                }
+                                                                                await transactionModel.create(obj);
+                                                                        }
+                                                                }
+                                                        }
+                                                }
+                                        }
+                                        let deleteCart = await cart.findOneAndDelete({ userId: findUserOrder.userId });
+                                        if (deleteCart) {
+                                                return res.status(200).json({ message: "Payment success.", status: 200, data: {} });
+                                        }
+                                }
+                        } else {
+                                return res.status(201).json({ message: "Payment not process, wallet balance is low.", status: 201, data: {} });
+                        }
+                } else {
+                        return res.status(404).json({ message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 exports.getAllOrders = async (req, res, next) => {
@@ -833,7 +957,7 @@ exports.getAllOrders = async (req, res, next) => {
                 return res.status(200).json({ status: 200, msg: "orders of user", data: orders })
         } catch (error) {
                 console.log(error);
-                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 exports.getOrders = async (req, res, next) => {
@@ -851,7 +975,7 @@ exports.getOrders = async (req, res, next) => {
                 return res.status(200).json({ status: 200, msg: "orders of user", data: orders })
         } catch (error) {
                 console.log(error);
-                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 exports.getOrderbyId = async (req, res, next) => {
@@ -869,7 +993,108 @@ exports.getOrderbyId = async (req, res, next) => {
                 return res.status(200).json({ status: 200, msg: "orders of user", data: orders })
         } catch (error) {
                 console.log(error);
-                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.allTransactionUser = async (req, res) => {
+        try {
+                const data = await transactionModel.find({ $or: [{ user: req.user._id }, { sender: req.user._id }, { reciver: req.user._id }] }).populate("user orderId reciver sender");
+                return res.status(200).json({ data: data });
+        } catch (err) {
+                return res.status(400).json({ message: err.message });
+        }
+};
+exports.allcreditTransactionUser = async (req, res) => {
+        try {
+                const data = await transactionModel.find({ $or: [{ user: req.user._id }, { sender: req.user._id }, { reciver: req.user._id }], type: "Credit" }).populate("user orderId reciver sender");
+                return res.status(200).json({ data: data });
+        } catch (err) {
+                return res.status(400).json({ message: err.message });
+        }
+};
+exports.allDebitTransactionUser = async (req, res) => {
+        try {
+                const data = await transactionModel.find({ $or: [{ user: req.user._id }, { sender: req.user._id }, { reciver: req.user._id }], type: "Debit" }).populate("user orderId reciver sender");
+                return res.status(200).json({ data: data });
+        } catch (err) {
+                return res.status(400).json({ message: err.message });
+        }
+};
+exports.addMoney = async (req, res) => {
+        try {
+                const data = await User.findOne({ _id: req.user._id, });
+                if (data) {
+                        let update = await User.findByIdAndUpdate({ _id: data._id }, { $set: { wallet: data.wallet + parseInt(req.body.balance) } }, { new: true });
+                        if (update) {
+                                let obj = {
+                                        user: req.user._id,
+                                        date: Date.now(),
+                                        amount: req.body.balance,
+                                        type: "Credit",
+                                };
+                                const data1 = await transactionModel.create(obj);
+                                if (data1) {
+                                        return res.status(200).json({ status: 200, message: "Money has been added.", data: update, });
+                                }
+                        }
+                } else {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.getWallet = async (req, res) => {
+        try {
+                const data = await User.findOne({ _id: req.user._id, });
+                if (data) {
+                        return res.status(200).json({ message: "get Profile", data: data.wallet });
+                } else {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.sendMoney = async (req, res) => {
+        try {
+                const data = await User.findOne({ _id: req.user._id, });
+                if (data) {
+                        let userData = await User.findOne({ _id: req.body.reciverId });
+                        if (userData) {
+                                let update = await User.findByIdAndUpdate({ _id: data._id }, { $set: { wallet: data.wallet - parseInt(req.body.balance) } }, { new: true });
+                                let update1 = await User.findByIdAndUpdate({ _id: userData._id }, { $set: { wallet: userData.wallet + parseInt(req.body.balance) } }, { new: true });
+                                if (update && update1) {
+                                        let obj = {
+                                                sender: req.user._id,
+                                                reciver: userData._id,
+                                                date: Date.now(),
+                                                amount: req.body.balance,
+                                                type: "Debit",
+                                        };
+                                        let obj1 = {
+                                                sender: req.user._id,
+                                                reciver: userData._id,
+                                                date: Date.now(),
+                                                amount: req.body.balance,
+                                                type: "Credit",
+                                        };
+                                        const data1 = await transactionModel.create(obj, obj1);
+                                        if (data1) {
+                                                return res.status(200).json({ status: 200, message: "Money has been added.", data: update, });
+                                        }
+                                }
+                        } else {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        }
+                } else {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 const reffralCode = async () => {
@@ -880,3 +1105,5 @@ const reffralCode = async () => {
         }
         return OTP;
 }
+// const stripe = require("stripe")('pk_live_51NYCJcArS6Dr0SQYUKlqAd37V2GZMbxBL6OGM9sZi8CY6nv6H7TUJcjfMiepBmkIdSdn1bUCo855sQuKb66oiM4j00PRLQzvUc'); // live
+const stripe = require("stripe")('sk_test_51NYCJcArS6Dr0SQY0UJ5ZOoiPHQ8R5jNOyCMOkjxpl4BHkG4DcAGAU8tjBw6TSOSfimDSELa6BVyCVSo9CGLXlyX00GkGDAQFo'); // test
