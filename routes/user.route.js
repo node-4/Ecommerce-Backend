@@ -9,6 +9,7 @@ router.post("/user/changePassword", auth.changePassword);
 router.get("/user/allCategory/:gender", auth.getCategories);
 router.get("/user/allSubcategoryById/:categoryId", auth.getSubCategoryByCategoryId);
 router.get('/user/Product/list', auth.listProduct);
+router.get('/user/listProductVarient', auth.listProductVarient);
 router.post("/cart/addtocart", authJwt.verifyToken, auth.addtocart);
 router.get("/cart/getCart", authJwt.verifyToken, auth.getCart);
 router.delete("/cart/deleteCart", authJwt.verifyToken, auth.deleteCart);

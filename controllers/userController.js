@@ -128,6 +128,27 @@ exports.listProduct = async (req, res) => {
                 return res.status(500).send({ message: "Internal Server error" + error.message });
         }
 };
+exports.listProductVarient = async (req, res) => {
+        try {
+                if (req.query.productId) {
+                        let findVarient = await productVarient.find({ productId: req.query.productId, }).populate({ path: 'productId', populate: [{ path: 'categoryId', model: 'Category' }, { path: 'subcategoryId', model: 'subcategory' }] }).populate('color')
+                        if (findVarient.length == 0) {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        } else {
+                                return res.status(200).send({ status: 200, message: "Product varient data found successfully.", data: findVarient });
+                        }
+                } else {
+                        let findVarient = await productVarient.find({}).populate({ path: 'productId', populate: [{ path: 'categoryId', model: 'Category' }, { path: 'subcategoryId', model: 'subcategory' }] }).populate('color');
+                        if (findVarient.length == 0) {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        } else {
+                                return res.status(200).send({ status: 200, message: "Product varient data found successfully.", data: findVarient });
+                        }
+                }
+        } catch (error) {
+                return res.status(500).send({ message: "Internal Server error" + error.message });
+        }
+};
 exports.addtocart = async (req, res) => {
         try {
                 let userData = await User.findOne({ _id: req.user._id, userType: userType.USER });
