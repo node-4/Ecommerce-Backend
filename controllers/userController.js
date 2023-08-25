@@ -1159,6 +1159,53 @@ exports.sendMoney = async (req, res) => {
                 return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
+exports.createProductReview = async (req, res, next) => {
+        try {
+                const data = await User.findOne({ _id: req.user._id, });
+                if (!data) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        const { rating, comment, productId } = req.body;
+                        const viewProduct = await product.findById(productId);
+                        if (viewProduct.reviews.length == 0) {
+                                const review = {
+                                        user: req.user._id,
+                                        name: req.user.name,
+                                        rating: Number(rating),
+                                        comment,
+                                };
+                                viewProduct.reviews.push(review);
+                                viewProduct.numOfReviews = viewProduct.reviews.length;
+                        } else {
+                                const isReviewed = viewProduct.reviews.find((rev) => { rev.user.toString() === req.user._id.toString() });
+                                if (isReviewed) {
+                                        viewProduct.reviews.forEach((rev) => {
+                                                if (rev.user.toString() === req.user._id.toString()) (rev.rating = rating), (rev.comment = comment);
+                                        });
+                                } else {
+                                        const review = {
+                                                user: req.user._id,
+                                                name: req.user.name,
+                                                rating: Number(rating),
+                                                comment,
+                                        };
+                                        viewProduct.reviews.push(review);
+                                        viewProduct.numOfReviews = viewProduct.reviews.length;
+                                }
+                        }
+                        let avg = 0;
+                        viewProduct.reviews.forEach((rev) => { avg += rev.rating; });
+                        viewProduct.avgRatingsProduct = avg / viewProduct.reviews.length;
+                        viewProduct.totalRating = viewProduct.reviews.length
+                        await viewProduct.save({ validateBeforeSave: false })
+                        const findProduct = await product.findById(productId);
+                        return res.status(200).json({ status: 200, data: findProduct.reviews });
+                }
+        } catch (error) {
+                console.log(error);
+                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
 const reffralCode = async () => {
         var digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         let OTP = '';

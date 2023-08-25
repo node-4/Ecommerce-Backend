@@ -499,7 +499,7 @@ exports.addProduct = async (req, res) => {
 }
 exports.viewProduct = async (req, res) => {
         try {
-                let findProduct = await product.findById({ _id: req.params.id }).populate('categoryId subcategoryId');
+                let findProduct = await product.findById({ _id: req.params.id }).populate('categoryId subcategoryId').populate({ path: "reviews.user", select: "fullName" });
                 if (findProduct) {
                         return res.status(200).send({ status: 200, message: "Product data found successfully.", data: findProduct });
                 } else {
