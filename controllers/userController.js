@@ -1206,6 +1206,13 @@ exports.createProductReview = async (req, res, next) => {
                 res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
+exports.getProductReviews = async (req, res, next) => {
+        const findProduct = await product.findById(req.params.id).populate({ path: 'reviews.user', select: 'fullName' }).select('reviews');
+        if (!findProduct) {
+                res.status(404).json({ message: "Product not found.", status: 404, data: {} });
+        }
+        res.status(200).json({ status: 200, reviews: findProduct, });
+};
 const reffralCode = async () => {
         var digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         let OTP = '';
