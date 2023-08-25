@@ -1213,6 +1213,55 @@ exports.getProductReviews = async (req, res, next) => {
         }
         res.status(200).json({ status: 200, reviews: findProduct, });
 };
+exports.updateQuantity = async (req, res) => {
+        try {
+                let userData = await User.findOne({ _id: req.user._id, userType: userType.USER });
+                if (!userData) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let findCart = await cart.findOne({ userId: userData._id });
+                        if (findCart) {
+                                let productId;
+                                const found = await findCart.products.some(el => (
+                                        (el._id).toString() === (req.body.productid).toString(), productId = el.productId
+                                ));
+                                console.log(productId);
+                                if (!found) {
+                                        return res.status(200).send({ status: 200, message: "Cart detail found.", data: findCart });
+                                } else {
+                                        let findProduct = await product.findById({ _id: productId });
+                                        if (!findProduct) {
+                                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                                        }
+                                        let price = 0;
+                                        if (findProduct.discountActive == true) {
+                                                price = findProduct.discountPrice;
+                                        } else {
+                                                price = findProduct.originalPrice;
+                                        }
+                                        let quantity = req.body.quantity;
+                                        let total = price * req.body.quantity;
+                                        let updateCart = await cart.findOneAndUpdate({ userId: userData._id, 'products._id': req.body.productid }, { $set: { 'products.$.productPrice': price, 'products.$.quantity': quantity, 'products.$.total': total } }, { new: true });
+                                        if (updateCart) {
+                                                let totalAmount = 0;
+                                                let totalItem = updateCart.products.length;
+                                                for (let l = 0; l < updateCart.products.length; l++) {
+                                                        totalAmount = totalAmount + updateCart.products[l].total;
+                                                }
+                                                let b = await cart.findByIdAndUpdate({ _id: updateCart._id }, { $set: { totalAmount: totalAmount, totalItem: totalItem } }, { new: true })
+                                                return res.status(200).send({ message: "Product add to cart.", data: b, });
+                                        }
+
+                                };
+                        } else {
+                                return res.status(200).send({ status: 200, message: "Cart detail not found.", data: {} });
+                        }
+                }
+        } catch (error) {
+                console.log(error)
+                return res.status(500).send({ message: "Internal Server error" + error.message });
+        }
+};
 const reffralCode = async () => {
         var digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         let OTP = '';
