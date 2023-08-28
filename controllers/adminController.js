@@ -433,6 +433,7 @@ exports.createBanner = async (req, res) => {
                 data = {
                         desc: req.body.desc,
                         image: bannerImage,
+                        type: req.body.type
                 };
                 const Banner = await banner.create(data);
                 return res.status(200).json({ message: "Banner add successfully.", status: 200, data: Banner });
@@ -442,6 +443,13 @@ exports.createBanner = async (req, res) => {
 };
 exports.getBanner = async (req, res) => {
         try {
+                if (req.query.type != (null || undefined)) {
+                        const data = await banner.find({ type: req.query.type })
+                        if (data.length === 0) {
+                                return res.status(400).send({ msg: "not found" });
+                        }
+                        return res.status(200).json({ status: 200, message: "Banner data found.", data: data });
+                }
                 const data = await banner.find({})
                 if (data.length === 0) {
                         return res.status(400).send({ msg: "not found" });
@@ -487,6 +495,7 @@ exports.updateBanner = async (req, res) => {
                 }
                 data = {
                         desc: req.body.desc || findData.desc,
+                        type: req.body.type || findData.type,
                         image: bannerImage || findData.image,
                 };
                 const Banner = await banner.findByIdAndUpdate({ _id: findData._id }, { $set: data }, { new: true })

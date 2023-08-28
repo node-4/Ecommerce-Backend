@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
 
 const bannerSchema = mongoose.Schema({
+    productId: {
+        type: Schema.Types.ObjectId,
+        ref: "product"
+    },
     image: {
         type: String,
         require: true,
@@ -8,6 +12,10 @@ const bannerSchema = mongoose.Schema({
     desc: {
         type: String,
         require: false,
+    },
+    type: {
+        type: String,
+        enum: ["top", "product", "bottom", "Tranding"],
     },
 });
 
