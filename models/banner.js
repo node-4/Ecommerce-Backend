@@ -15,7 +15,6 @@ const bannerSchema = mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ["top", "product", "bottom", "Tranding"],
     },
 });
 
