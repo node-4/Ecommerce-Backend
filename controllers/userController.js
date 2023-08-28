@@ -900,7 +900,7 @@ exports.successOrder = async (req, res) => {
                                 return res.status(404).send({ status: 404, message: "User not found or token expired." });
                         }
                         await userOrders.findByIdAndUpdate({ _id: findUserOrder._id }, { $set: { orderStatus: "confirmed", paymentStatus: "paid" } }, { new: true });
-                        let obj1 = { user: findUserOrder.userId, orderId: findUserOrder.orderId, amount: findUserOrder.paidAmount, paymentMode: req.body.paymentMode, type: "Debit", Status: "paid", }
+                        let obj1 = { user: findUserOrder.userId, orderId: findUserOrder._id, amount: findUserOrder.paidAmount, paymentMode: req.body.paymentMode, type: "Debit", Status: "paid", }
                         await transactionModel.create(obj1);
                         for (let i = 0; i < findUserOrder.Orders.length; i++) {
                                 let findu = await order.findOne({ _id: findUserOrder.Orders[i] });
@@ -913,7 +913,7 @@ exports.successOrder = async (req, res) => {
                                                         if (wallet) {
                                                                 let obj = {
                                                                         user: userData._id,
-                                                                        orderId: updateConfirm.orderId,
+                                                                        orderId: updateConfirm._id,
                                                                         amount: updateConfirm.total,
                                                                         paymentMode: req.body.paymentMode,
                                                                         type: "Credit",
