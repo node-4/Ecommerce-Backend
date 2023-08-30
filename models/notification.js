@@ -5,6 +5,10 @@ var notificationModel = new Schema({
                 type: Mongoose.Schema.Types.ObjectId,
                 ref: "user"
         },
+        productId: {
+                type: Mongoose.Schema.Types.ObjectId,
+                ref: "product"
+        },
         title: {
                 type: String
         },

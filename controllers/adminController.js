@@ -623,6 +623,7 @@ exports.sendNotification = async (req, res) => {
                                                 let obj = {
                                                         userId: userData[i]._id,
                                                         title: req.body.title,
+                                                        productId: req.body.productId,
                                                         body: req.body.body,
                                                         date: req.body.date,
                                                         image: req.body.image,
@@ -633,6 +634,7 @@ exports.sendNotification = async (req, res) => {
                                         let obj1 = {
                                                 userId: admin._id,
                                                 title: req.body.title,
+                                                productId: req.body.productId,
                                                 body: req.body.body,
                                                 date: req.body.date,
                                                 image: req.body.image,
@@ -649,6 +651,7 @@ exports.sendNotification = async (req, res) => {
                                 } else {
                                         let obj = {
                                                 userId: userData._id,
+                                                productId: req.body.productId,
                                                 title: req.body.title,
                                                 body: req.body.body,
                                                 date: req.body.date,
@@ -659,6 +662,7 @@ exports.sendNotification = async (req, res) => {
                                         if (data) {
                                                 let obj1 = {
                                                         userId: admin._id,
+                                                        productId: req.body.productId,
                                                         title: req.body.title,
                                                         body: req.body.body,
                                                         date: req.body.date,
@@ -682,7 +686,7 @@ exports.allNotification = async (req, res) => {
                 if (!admin) {
                         return res.status(404).json({ status: 404, message: "Admin not found" });
                 } else {
-                        let findNotification = await notification.find({ userId: admin._id }).populate('userId');
+                        let findNotification = await notification.find({ userId: admin._id }).populate('userId productId');
                         if (findNotification.length == 0) {
                                 return res.status(404).json({ status: 404, message: "Notification data not found successfully.", data: {} })
                         } else {
