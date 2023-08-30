@@ -615,11 +615,13 @@ exports.sendNotification = async (req, res) => {
                         return res.status(404).json({ status: 404, message: "Admin not found" });
                 } else {
                         if (req.body.total == "ALL") {
-                                let userData = await User.find({ role: req.body.sendTo });
+                                let userData = await User.find({ userType: req.body.sendTo });
                                 if (userData.length == 0) {
                                         return res.status(404).json({ status: 404, message: "Employee not found" });
                                 } else {
+                                        console.log("-----------------");
                                         for (let i = 0; i < userData.length; i++) {
+                                                console.log("-----------------", userData[i]._id);
                                                 let obj = {
                                                         userId: userData[i]._id,
                                                         title: req.body.title,
@@ -645,7 +647,7 @@ exports.sendNotification = async (req, res) => {
                                 }
                         }
                         if (req.body.total == "SINGLE") {
-                                let userData = await User.findById({ _id: req.body._id, role: req.body.sendTo });
+                                let userData = await User.findById({ _id: req.body._id, userType: req.body.sendTo });
                                 if (!userData) {
                                         return res.status(404).json({ status: 404, message: "Employee not found" });
                                 } else {
