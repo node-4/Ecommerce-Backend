@@ -430,12 +430,12 @@ exports.createBanner = async (req, res) => {
                 if (req.file.path) {
                         bannerImage = req.file.path
                 }
-                data = {
-                        desc: req.body.desc,
-                        image: bannerImage,
-                        type: req.body.type
-                };
-                const Banner = await banner.create(data);
+                req.body.desc = req.body.desc;
+                req.body.image = bannerImage;
+                req.body.type = req.body.type;
+                req.body.productId = req.body.productId;
+
+                const Banner = await banner.create(req.body);
                 return res.status(200).json({ message: "Banner add successfully.", status: 200, data: Banner });
         } catch (error) {
                 return res.status(500).json({ status: 500, message: "internal server error ", data: error.message, });
