@@ -444,13 +444,13 @@ exports.createBanner = async (req, res) => {
 exports.getBanner = async (req, res) => {
         try {
                 if (req.query.type != (null || undefined)) {
-                        const data = await banner.find({ type: req.query.type })
+                        const data = await banner.find({ type: req.query.type }).populate('productId')
                         if (data.length === 0) {
                                 return res.status(400).send({ msg: "not found" });
                         }
                         return res.status(200).json({ status: 200, message: "Banner data found.", data: data });
                 }
-                const data = await banner.find({})
+                const data = await banner.find({}).populate('productId')
                 if (data.length === 0) {
                         return res.status(400).send({ msg: "not found" });
                 }
