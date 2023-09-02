@@ -1181,10 +1181,10 @@ exports.addKYC = async (req, res) => {
                                 let panCard = req.files['panCard'];
                                 let gstNO = req.files['gstNO'];
                                 let addressProof = req.files['addressProof'];
-                                req.body.aadhar = aadhar[0].filename;
-                                req.body.panCard = panCard[0].filename;
-                                req.body.gstNO = gstNO[0].filename;
-                                req.body.addressProof = addressProof[0].filename;
+                                req.body.aadhar = aadhar[0].path;
+                                req.body.panCard = panCard[0].path;
+                                req.body.gstNO = gstNO[0].path;
+                                req.body.addressProof = addressProof[0].path;
                                 let result = await vendorKyc.findByIdAndUpdate({ _id: findKyc._id }, { $set: req.body }, { new: true })
                                 if (result) {
                                         let userData1 = await User.findByIdAndUpdate({ _id: vendorData._id }, { $set: { kycStatus: kycStatus.UPLOADED, kycDocumentId: result._id } }, { new: true });
@@ -1196,10 +1196,10 @@ exports.addKYC = async (req, res) => {
                                 let panCard = req.files['panCard'];
                                 let gstNO = req.files['gstNO'];
                                 let addressProof = req.files['addressProof'];
-                                req.body.aadhar = aadhar[0].filename;
-                                req.body.panCard = panCard[0].filename;
-                                req.body.gstNO = gstNO[0].filename;
-                                req.body.addressProof = addressProof[0].filename;
+                                req.body.aadhar = aadhar[0].path;
+                                req.body.panCard = panCard[0].path;
+                                req.body.gstNO = gstNO[0].path;
+                                req.body.addressProof = addressProof[0].path;
                                 let obj = {
                                         vendorId: vendorData._id,
                                         aadhar: req.body.aadhar,

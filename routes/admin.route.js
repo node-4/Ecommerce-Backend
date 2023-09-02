@@ -2,7 +2,7 @@ const auth = require("../controllers/adminController");
 const authJwt = require("../middlewares/authJwt");
 const express = require("express");
 const router = express()
-const { cpUpload0, upload, upload1, upload2, cpUpload, bannerUpload, categoryUpload, subCategoryUpload } = require('../middlewares/imageUpload')
+const { cpUpload0, upload, upload1, upload2, cpUpload, bannerUpload, offerUpload, categoryUpload, subCategoryUpload } = require('../middlewares/imageUpload')
 router.post("/admin/registration", auth.registration);
 router.post("/admin/login", auth.signin);
 router.get("/admin/getProfile", [authJwt.verifyToken], auth.getProfile);
@@ -54,4 +54,6 @@ router.get('/admin/listProductVarient', auth.listProductVarient);
 router.get('/admin/dashboard', auth.dashboard);
 router.get("/admin/getcancelReturnOrder", [authJwt.verifyToken], auth.getcancelReturnOrder);
 router.put("/admin/acceptRejectCancelReturnOrder/:id", [authJwt.verifyToken], auth.acceptRejectCancelReturnOrder);
+router.post("/admin/Offer/addOffer", [authJwt.verifyToken], offerUpload.single('image'), auth.addOffer);
+router.get("/admin/Offer/listOffer", auth.listOffer);
 module.exports = router;

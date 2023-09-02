@@ -17,6 +17,7 @@ const product = require('../models/productModel');
 const categoryModel = require("../models/categoryModel");
 const subCategoryModel = require("../models/subCategoryModel");
 const cancelReturnOrder = require("../models/order/cancelReturnOrder");
+const offer = require('../models/offer');
 exports.registration = async (req, res) => {
         const { phone, email } = req.body;
         try {
@@ -1002,7 +1003,7 @@ exports.acceptRejectCancelReturnOrder = async (req, res) => {
                 } else {
                         let findUser = await cancelReturnOrder.findOne({ _id: req.params.id });
                         if (!findUser) {
-                                return res.status(404).json({ message: "User not found.", status: 404, data: {} });
+                                return res.status(404).json({ message: "Order not found.", status: 404, data: {} });
                         } else {
                                 if (req.body.pickStatus == "Reject") {
                                         let findUser1 = await cancelReturnOrder.findByIdAndUpdate({ _id: findUser._id }, { $set: { pickStatus: req.body.pickStatus } }, { new: true });
@@ -1012,7 +1013,7 @@ exports.acceptRejectCancelReturnOrder = async (req, res) => {
                                                         return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
                                                 }
                                                 await order.findByIdAndUpdate({ _id: orders._id }, { $set: { returnPickStatus: req.body.pickStatus, returnStatus: "" } }, { new: true });
-                                                return res.status(200).json({ message: "User block successfully.", status: 200, data: findUser });
+                                                return res.status(200).json({ message: "Reject return successfully.", status: 200, data: findUser });
                                         }
                                 } else {
                                         let findUser1 = await cancelReturnOrder.findByIdAndUpdate({ _id: findUser._id }, { $set: { pickStatus: req.body.pickStatus } }, { new: true });
@@ -1022,8 +1023,184 @@ exports.acceptRejectCancelReturnOrder = async (req, res) => {
                                                         return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
                                                 }
                                                 await order.findByIdAndUpdate({ _id: orders._id }, { $set: { returnPickStatus: req.body.pickStatus } }, { new: true });
-                                                return res.status(200).json({ message: "User block successfully.", status: 200, data: findUser });
+                                                return res.status(200).json({ message: "Accept return successfully.", status: 200, data: findUser });
                                         }
+                                }
+                        }
+                }
+        } catch (error) {
+                return res.status(500).send({ msg: "internal server error", error: error, });
+        }
+};
+exports.addOffer = async (req, res) => {
+        try {
+                if (req.body.userId != (null || undefined)) {
+                        let vendorData = await User.findOne({ _id: req.body.userId });
+                        if (!vendorData) {
+                                return res.status(404).send({ status: 404, message: "User not found" });
+                        }
+                        if (req.body.categoryId != (null || undefined)) {
+                                const findCategory = await Category.findById({ _id: req.body.categoryId });
+                                if (!findCategory) {
+                                        return res.status(404).json({ message: "Category Not Found", status: 404, data: {} });
+                                } else {
+                                        let fileUrl;
+                                        if (req.file) {
+                                                fileUrl = req.file ? req.file.path : "";
+                                        }
+                                        const d = new Date(req.body.expirationDate);
+                                        let expirationDate = d.toISOString();
+                                        const de = new Date(req.body.activationDate);
+                                        let activationDate = de.toISOString();
+                                        let couponCode = await reffralCode();
+                                        let obj = {
+                                                userId: req.body.userId,
+                                                categoryId: findCategory._id,
+                                                couponCode: couponCode,
+                                                amount: req.body.amount,
+                                                expirationDate: expirationDate,
+                                                activationDate: activationDate,
+                                                image: fileUrl,
+                                                type: "user"
+                                        }
+                                        let saveStore = await offer(obj).save();
+                                        if (saveStore) {
+                                                res.json({ status: 200, message: 'offer add successfully.', data: saveStore });
+                                        }
+                                }
+                        }
+                        if (req.body.productId != (null || undefined)) {
+                                const findProduct = await product.findById({ _id: req.body.productId });
+                                if (!findProduct) {
+                                        return res.status(404).json({ message: "Service Not Found", status: 404, data: {} });
+                                } else {
+                                        let fileUrl;
+                                        if (req.file) {
+                                                fileUrl = req.file ? req.file.path : "";
+                                        }
+                                        const d = new Date(req.body.expirationDate);
+                                        let expirationDate = d.toISOString();
+                                        const de = new Date(req.body.activationDate);
+                                        let activationDate = de.toISOString();
+                                        let couponCode = await reffralCode();
+                                        let obj = {
+                                                userId: req.body.userId,
+                                                productId: findProduct._id,
+                                                couponCode: couponCode,
+                                                amount: req.body.amount,
+                                                expirationDate: expirationDate,
+                                                activationDate: activationDate,
+                                                image: fileUrl,
+                                                type: "user"
+                                        }
+                                        let saveStore = await offer(obj).save();
+                                        if (saveStore) {
+                                                res.json({ status: 200, message: 'offer add successfully.', data: saveStore });
+                                        }
+                                }
+                        }
+                } else {
+                        if (req.body.categoryId != (null || undefined)) {
+                                const findCategory = await Category.findById({ _id: req.body.categoryId });
+                                if (!findCategory) {
+                                        return res.status(404).json({ message: "Category Not Found", status: 404, data: {} });
+                                } else {
+                                        let fileUrl;
+                                        if (req.file) {
+                                                fileUrl = req.file ? req.file.path : "";
+                                        }
+                                        const d = new Date(req.body.expirationDate);
+                                        let expirationDate = d.toISOString();
+                                        const de = new Date(req.body.activationDate);
+                                        let activationDate = de.toISOString();
+                                        let couponCode = await reffralCode();
+                                        let obj = {
+                                                categoryId: findCategory._id,
+                                                couponCode: couponCode,
+                                                amount: req.body.amount,
+                                                expirationDate: expirationDate,
+                                                activationDate: activationDate,
+                                                image: fileUrl,
+                                                type: "other"
+                                        }
+                                        let saveStore = await offer(obj).save();
+                                        if (saveStore) {
+                                                res.json({ status: 200, message: 'offer add successfully.', data: saveStore });
+                                        }
+                                }
+                        }
+                        if (req.body.productId != (null || undefined)) {
+                                const findProduct = await product.findById({ _id: req.body.productId });
+                                if (!findProduct) {
+                                        return res.status(404).json({ message: "Service Not Found", status: 404, data: {} });
+                                } else {
+                                        let fileUrl;
+                                        if (req.file) {
+                                                fileUrl = req.file ? req.file.path : "";
+                                        }
+                                        const d = new Date(req.body.expirationDate);
+                                        let expirationDate = d.toISOString();
+                                        const de = new Date(req.body.activationDate);
+                                        let activationDate = de.toISOString();
+                                        let couponCode = await reffralCode();
+                                        let obj = {
+                                                productId: findProduct._id,
+                                                couponCode: couponCode,
+                                                amount: req.body.amount,
+                                                expirationDate: expirationDate,
+                                                activationDate: activationDate,
+                                                image: fileUrl,
+                                                type: "other"
+                                        }
+                                        let saveStore = await offer(obj).save();
+                                        if (saveStore) {
+                                                res.json({ status: 200, message: 'offer add successfully.', data: saveStore });
+                                        }
+                                }
+                        }
+                }
+        } catch (error) {
+                console.error(error);
+                return res.status(500).send({ status: 500, message: "Server error" + error.message });
+        }
+};
+exports.listOffer = async (req, res) => {
+        try {
+                let findService = await offer.find({});
+                if (findService.length == 0) {
+                        return res.status(404).send({ status: 404, message: "Data not found" });
+                } else {
+                        return res.json({ status: 200, message: 'Offer Data found successfully.', service: findService });
+                }
+        } catch (error) {
+                console.error(error);
+                return res.status(500).send({ status: 500, message: "Server error" + error.message });
+        }
+};
+exports.refundPayment = async (req, res) => {
+        try {
+                let userData = await User.findOne({ _id: req.user._id });
+                if (!userData) {
+                        return res.status(404).json({ status: 404, message: "User not found" });
+                } else {
+                        let findOrder = await cancelReturnOrder.findOne({ _id: req.params.id });
+                        if (!findOrder) {
+                                return res.status(404).json({ message: "User not found.", status: 404, data: {} });
+                        } else {
+                                let update = await User.findByIdAndUpdate({ _id: data._id }, { $set: { wallet: data.wallet + parseInt(req.body.balance) } }, { new: true });
+                                if (update) {
+                                        let obj = {
+                                                user: req.user._id,
+                                                date: Date.now(),
+                                                amount: req.body.balance,
+                                                type: "Credit",
+                                                relatedPayments: "AddMoney"
+                                        };
+                                        const data1 = await transactionModel.create(obj);
+                                        if (data1) {
+                                                return res.status(200).json({ status: 200, message: "Money has been added.", data: update, });
+                                        }
+
                                 }
                         }
                 }

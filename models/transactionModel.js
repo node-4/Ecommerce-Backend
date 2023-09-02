@@ -33,6 +33,9 @@ const transactionSchema = mongoose.Schema({
     type: {
         type: String,
     },
+    relatedPayments: {
+        type: String,
+    },
     Status: {
         type: String,
     },

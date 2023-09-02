@@ -1094,6 +1094,7 @@ exports.addMoney = async (req, res) => {
                                         date: Date.now(),
                                         amount: req.body.balance,
                                         type: "Credit",
+                                        relatedPayments: "AddMoney"
                                 };
                                 const data1 = await transactionModel.create(obj);
                                 if (data1) {
@@ -1136,6 +1137,7 @@ exports.sendMoney = async (req, res) => {
                                                 date: Date.now(),
                                                 amount: req.body.balance,
                                                 type: "Debit",
+                                                relatedPayments: "sendMoney"
                                         };
                                         let obj1 = {
                                                 sender: req.user._id,
@@ -1143,6 +1145,7 @@ exports.sendMoney = async (req, res) => {
                                                 date: Date.now(),
                                                 amount: req.body.balance,
                                                 type: "Credit",
+                                                relatedPayments: "sendMoney"
                                         };
                                         const data1 = await transactionModel.create(obj, obj1);
                                         if (data1) {
