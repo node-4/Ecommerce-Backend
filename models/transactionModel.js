@@ -16,6 +16,10 @@ const transactionSchema = mongoose.Schema({
         type: mongoose.Schema.ObjectId,
         ref: "order",
     },
+    cancelReturnOrderId: {
+        type: mongoose.Schema.ObjectId,
+        ref: "cancelReturnOrder",
+    },
     date: {
         type: Date,
         default: Date.now,

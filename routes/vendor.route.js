@@ -42,4 +42,5 @@ router.delete('/vendor/VarientInColor/deleteImage/:id', authJwt.verifyToken, aut
 router.get("/vendor/Orders", [authJwt.verifyToken], auth.getOrders);
 router.post("/kyc/addKYC", [authJwt.verifyToken], cpUpload, auth.addKYC);
 router.get("/kyc/KycList", [authJwt.verifyToken], auth.KycList);
+router.get("/vendor/getcancelReturnOrder", [authJwt.verifyToken], auth.getcancelReturnOrder);
 module.exports = router;

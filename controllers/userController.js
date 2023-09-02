@@ -23,6 +23,7 @@ const cart = require('../models/cart');
 const order = require("../models/order/orderModel");
 const userOrders = require("../models/order/userOrders");
 const transactionModel = require("../models/transactionModel");
+const cancelReturnOrder = require("../models/order/cancelReturnOrder");
 
 exports.forgetPassword = async (req, res) => {
         try {
@@ -1203,15 +1204,15 @@ exports.createProductReview = async (req, res, next) => {
                 }
         } catch (error) {
                 console.log(error);
-                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 exports.getProductReviews = async (req, res, next) => {
         const findProduct = await product.findById(req.params.id).populate({ path: 'reviews.user', select: 'fullName' }).select('reviews');
         if (!findProduct) {
-                res.status(404).json({ message: "Product not found.", status: 404, data: {} });
+                return res.status(404).json({ message: "Product not found.", status: 404, data: {} });
         }
-        res.status(200).json({ status: 200, reviews: findProduct, });
+        return res.status(200).json({ status: 200, reviews: findProduct, });
 };
 exports.updateQuantity = async (req, res) => {
         try {
@@ -1260,6 +1261,43 @@ exports.updateQuantity = async (req, res) => {
         } catch (error) {
                 console.log(error)
                 return res.status(500).send({ message: "Internal Server error" + error.message });
+        }
+};
+exports.cancelReturnOrder = async (req, res, next) => {
+        try {
+                const orders = await order.findById({ _id: req.params.id });
+                if (!orders) {
+                        return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
+                } else {
+                        let obj = {
+                                userId: orders.userId,
+                                vendorId: orders.vendorId,
+                                Orders: orders._id,
+                                reason: req.body.reason,
+                                orderStatus: req.body.orderStatus,
+                                pickStatus: "Pending"
+                        }
+                        const data = await cancelReturnOrder.create(obj);
+                        let update = await order.findByIdAndUpdate({ _id: orders._id }, { $set: { returnOrder: data._id, returnStatus: req.body.orderStatus, returnPickStatus: "Pending" } }, { new: true }).populate('returnOrder');
+                        if (update) {
+                                res.status(200).json({ message: `Order ${req.body.orderStatus} Successfully.`, status: 200, data: update });
+                        }
+                }
+        } catch (error) {
+                console.log(error);
+                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.getcancelReturnOrder = async (req, res, next) => {
+        try {
+                const orders = await cancelReturnOrder.find({ userId: req.user._id }).populate('Orders');
+                if (orders.length == 0) {
+                        return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
+                }
+                return res.status(200).json({ status: 200, msg: "orders of user", data: orders })
+        } catch (error) {
+                console.log(error);
+                res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 const reffralCode = async () => {

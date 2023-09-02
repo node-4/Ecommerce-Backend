@@ -76,6 +76,19 @@ const DocumentSchema = schema({
         extimatedDelivery: {
                 type: String,
         },
+        returnStatus: {
+                type: String,
+                enum: ["return", "cancel"],
+                default: ""
+        },
+        returnPickStatus: {
+                type: String,
+                enum: ["Pending", "Accept", "Reject", "Pick"],
+        },
+        returnOrder: {
+                type: schema.Types.ObjectId,
+                ref: "cancelReturnOrder",
+        },
         paymentOption: {
                 type: String,
                 enum: ["PrePaid", "PostPaid"],

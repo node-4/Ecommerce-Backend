@@ -22,6 +22,7 @@ const productVarient = require('../models/productVarient');
 const order = require("../models/order/orderModel");
 const userOrders = require("../models/order/userOrders");
 const vendorKyc = require("../models/vendorKyc");
+const cancelReturnOrder = require("../models/order/cancelReturnOrder");
 exports.registration = async (req, res) => {
         try {
                 const { phone, userType } = req.body;
@@ -33,6 +34,7 @@ exports.registration = async (req, res) => {
                         }
                         if (userType == "USER") {
                                 req.body.kycStatus = kycStatus.APPROVED;
+                                req.body.status = "Active";
                         }
                         req.body.password = bcrypt.hashSync(req.body.password);
                         const userCreate = await User.create(req.body)
@@ -1234,6 +1236,18 @@ exports.KycList = async (req, res) => {
         } catch (error) {
                 console.log(error);
                 return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.getcancelReturnOrder = async (req, res, next) => {
+        try {
+                const orders = await cancelReturnOrder.find({ vendorId: req.user._id }).populate('Orders');
+                if (orders.length == 0) {
+                        return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
+                }
+                return res.status(200).json({ status: 200, msg: "orders of user", data: orders })
+        } catch (error) {
+                console.log(error);
+                res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 const reffralCode = async () => {

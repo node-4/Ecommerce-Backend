@@ -13,6 +13,10 @@ const contact = require("../models/contactDetail");
 const notification = require("../models/notification");
 const Coupan = require('../models/Coupan')
 const vendorKyc = require("../models/vendorKyc");
+const product = require('../models/productModel');
+const categoryModel = require("../models/categoryModel");
+const subCategoryModel = require("../models/subCategoryModel");
+const cancelReturnOrder = require("../models/order/cancelReturnOrder");
 exports.registration = async (req, res) => {
         const { phone, email } = req.body;
         try {
@@ -61,6 +65,56 @@ exports.getProfile = async (req, res) => {
         } catch (err) {
                 console.log(err);
                 return res.status(500).send({ status: 500, message: "internal server error " + err.message, });
+        }
+};
+exports.update = async (req, res) => {
+        try {
+                const { firstName, lastName, email, phone, password } = req.body;
+                const user = await User.findById(req.user.id);
+                if (!user) {
+                        return res.status(404).send({ message: "not found" });
+                }
+                user.firstName = firstName || user.firstName;
+                user.lastName = lastName || user.lastName;
+                user.email = email || user.email;
+                user.phone = phone || user.phone;
+                if (req.body.password) {
+                        user.password = bcrypt.hashSync(password, 8) || user.password;
+                }
+                const updated = await user.save();
+                return res.status(200).send({ message: "updated", data: updated });
+        } catch (err) {
+                console.log(err);
+                return res.status(500).send({
+                        message: "internal server error " + err.message,
+                });
+        }
+};
+exports.blockUnblockUser = async (req, res) => {
+        try {
+                let userData = await User.findOne({ _id: req.user._id });
+                if (!userData) {
+                        return res.status(404).json({ status: 404, message: "User not found" });
+                } else {
+                        let findUser = await User.findOne({ _id: req.params.id });
+                        if (!findUser) {
+                                return res.status(404).json({ message: "User not found.", status: 404, data: {} });
+                        } else {
+                                if (findUser.status == "Active") {
+                                        let findUser1 = await User.findByIdAndUpdate({ _id: findUser._id }, { $set: { status: "Block" } }, { new: true });
+                                        if (findUser1) {
+                                                return res.status(200).json({ message: "User block successfully.", status: 200, data: findUser1 });
+                                        }
+                                } else {
+                                        let findUser1 = await User.findByIdAndUpdate({ _id: findUser._id }, { $set: { status: "Active" } }, { new: true });
+                                        if (findUser1) {
+                                                return res.status(200).json({ message: "User active successfully.", status: 200, data: findUser1 });
+                                        }
+                                }
+                        }
+                }
+        } catch (error) {
+                return res.status(500).send({ msg: "internal server error", error: error, });
         }
 };
 exports.getAllUser = async (req, res) => {
@@ -200,8 +254,8 @@ exports.updateCategory = async (req, res) => {
 exports.approvedRejectCategory = async (req, res) => {
         try {
                 const { id } = req.params;
-                const category = await Category.findById(id);
-                if (!category) {
+                const findProduct = await Category.findById({ _id: id });
+                if (!findProduct) {
                         return res.status(404).json({ message: "Category Not Found", status: 404, data: {} });
                 }
                 if (req.body.approvalStatus == "Accept") {
@@ -216,7 +270,6 @@ exports.approvedRejectCategory = async (req, res) => {
                         let saveStore = await Category.findByIdAndUpdate({ _id: findProduct._id }, { $set: { status: "Block", approvalStatus: "Pending" } }, { new: true });
                         return res.status(200).json({ status: 200, message: "Updated Successfully", data: saveStore });
                 }
-                return res.status(200).json({ status: 200, message: "Updated Successfully", data: update });
         } catch (err) {
                 return res.status(500).send({ msg: "internal server error ", error: err.message, });
         }
@@ -809,6 +862,173 @@ exports.KycList = async (req, res) => {
         } catch (error) {
                 console.log(error);
                 return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.listProduct = async (req, res) => {
+        try {
+                let query = {};
+                if (req.query.categoryId) {
+                        query.categoryId = req.query.categoryId;
+                }
+                if (req.query.subcategoryId) {
+                        query.subcategoryId = req.query.subcategoryId;
+                }
+                if (req.query.gender) {
+                        query.gender = req.query.gender;
+                }
+                if (req.query.fromDate && !req.query.toDate) {
+                        query.createdAt = { $gte: req.query.fromDate };
+                }
+                if (!req.query.fromDate && req.query.toDate) {
+                        query.createdAt = { $lte: req.query.toDate };
+                }
+                if (req.query.fromDate && req.query.toDate) {
+                        query.$and = [
+                                { createdAt: { $gte: req.query.fromDate } },
+                                { createdAt: { $lte: req.query.toDate } },
+                        ];
+                }
+                var limit = parseInt(req.query.limit);
+                var options = {
+                        page: parseInt(req.query.page) || 1,
+                        limit: limit || 10,
+                        sort: { createdAt: -1 },
+                        populate: { path: 'categoryId subcategoryId vendorId' }
+                }
+                product.paginate(query, options, (transErr, transRes) => {
+                        if (transErr) {
+                                return res.status(501).send({ message: "Internal Server error" + transErr.message });
+                        } else if (transRes.docs.length == 0) {
+                                return res.status(200).send({ status: 200, message: "Product data found successfully.", data: [] });
+                        } else {
+                                return res.status(200).send({ status: 200, message: "Product data found successfully.", data: transRes });
+                        }
+                })
+
+        } catch (error) {
+                console.log(error)
+                return res.status(500).send({ message: "Internal Server error" + error.message });
+        }
+};
+exports.deleteProduct = async (req, res) => {
+        try {
+                let findProduct = await product.findById({ _id: req.params.id });
+                if (findProduct) {
+                        let findVarient = await productVarient.find({ productId: findProduct._id });
+                        if (findVarient.length > 0) {
+                                let count = 0, totalVarient = findVarient.length;
+                                for (let i = 0; i < findVarient.length; i++) {
+                                        await productVarient.findByIdAndDelete({ _id: findVarient[i]._id });
+                                        count++;
+                                }
+                                if ((count == totalVarient) == true) {
+                                        let deletes = await product.findByIdAndDelete({ _id: findProduct._id });
+                                        if (deletes) {
+                                                return res.status(200).send({ status: 200, message: "Product delete successfully.", data: {} });
+                                        }
+                                }
+                        } else {
+                                let deletes = await product.findByIdAndDelete({ _id: findProduct._id });
+                                if (deletes) {
+                                        return res.status(200).send({ status: 200, message: "Product delete successfully.", data: {} });
+                                }
+                        }
+                } else {
+                        return res.status(404).json({ status: 404, message: "Product not found", data: {} });
+                }
+        } catch (error) {
+                console.log("error", error)
+                return res.status(500).send({ message: "Server error" + error.message });
+        }
+}
+exports.listProductVarient = async (req, res) => {
+        try {
+                if (req.query.productId) {
+                        let findVarient = await productVarient.find({ productId: req.query.productId, }).populate({ path: 'productId', populate: [{ path: 'categoryId', model: 'Category' }, { path: 'subcategoryId', model: 'subcategory' }] }).populate('color')
+                        if (findVarient.length == 0) {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        } else {
+                                return res.status(200).send({ status: 200, message: "Product varient data found successfully.", data: findVarient });
+                        }
+                } else {
+                        let findVarient = await productVarient.find({}).populate({ path: 'productId', populate: [{ path: 'categoryId', model: 'Category' }, { path: 'subcategoryId', model: 'subcategory' }] }).populate('color');
+                        if (findVarient.length == 0) {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        } else {
+                                return res.status(200).send({ status: 200, message: "Product varient data found successfully.", data: findVarient });
+                        }
+                }
+        } catch (error) {
+                return res.status(500).send({ message: "Internal Server error" + error.message });
+        }
+};
+exports.dashboard = async (req, res, next) => {
+        try {
+                const findProduct = await product.find({}).count()
+                const category = await categoryModel.find({}).count()
+                const subcategory = await subCategoryModel.find({}).count()
+                const user = await User.find({ userType: "USER" }).count()
+                const vendor = await User.find({ userType: "VENDOR" }).count()
+                let obj = {
+                        product: findProduct,
+                        category: category,
+                        subcategory: subcategory,
+                        user: user,
+                        vendor: vendor
+                }
+                return res.status(200).json({ status: 200, msg: "orders of user", data: obj })
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.getcancelReturnOrder = async (req, res, next) => {
+        try {
+                const orders = await cancelReturnOrder.find({}).populate('Orders');
+                if (orders.length == 0) {
+                        return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
+                }
+                return res.status(200).json({ status: 200, msg: "orders of user", data: orders })
+        } catch (error) {
+                console.log(error);
+                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.acceptRejectCancelReturnOrder = async (req, res) => {
+        try {
+                let userData = await User.findOne({ _id: req.user._id });
+                if (!userData) {
+                        return res.status(404).json({ status: 404, message: "User not found" });
+                } else {
+                        let findUser = await cancelReturnOrder.findOne({ _id: req.params.id });
+                        if (!findUser) {
+                                return res.status(404).json({ message: "User not found.", status: 404, data: {} });
+                        } else {
+                                if (req.body.pickStatus == "Reject") {
+                                        let findUser1 = await cancelReturnOrder.findByIdAndUpdate({ _id: findUser._id }, { $set: { pickStatus: req.body.pickStatus } }, { new: true });
+                                        if (findUser1) {
+                                                const orders = await order.findById({ _id: findUser.Orders })
+                                                if (!orders) {
+                                                        return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
+                                                }
+                                                await order.findByIdAndUpdate({ _id: orders._id }, { $set: { returnPickStatus: req.body.pickStatus, returnStatus: "" } }, { new: true });
+                                                return res.status(200).json({ message: "User block successfully.", status: 200, data: findUser });
+                                        }
+                                } else {
+                                        let findUser1 = await cancelReturnOrder.findByIdAndUpdate({ _id: findUser._id }, { $set: { pickStatus: req.body.pickStatus } }, { new: true });
+                                        if (findUser1) {
+                                                const orders = await order.findById({ _id: findUser.Orders })
+                                                if (!orders) {
+                                                        return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
+                                                }
+                                                await order.findByIdAndUpdate({ _id: orders._id }, { $set: { returnPickStatus: req.body.pickStatus } }, { new: true });
+                                                return res.status(200).json({ message: "User block successfully.", status: 200, data: findUser });
+                                        }
+                                }
+                        }
+                }
+        } catch (error) {
+                return res.status(500).send({ msg: "internal server error", error: error, });
         }
 };
 const reffralCode = async () => {

@@ -65,7 +65,7 @@ var userSchema = new schema(
                 },
                 status: {
                         type: String,
-                        enum: ["Approved", "Reject", "Pending"],
+                        enum: ["Active", "Block"],
                 },
                 wallet: {
                         type: Number,

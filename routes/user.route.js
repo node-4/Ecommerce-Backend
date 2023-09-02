@@ -24,6 +24,8 @@ router.post("/cart/placeOrder/:orderId", [authJwt.verifyToken], auth.placeOrder)
 router.get("/cart/successOrder/:orderId", [authJwt.verifyToken], auth.successOrder);
 router.get("/cart/successOrderwithWallet/:orderId", [authJwt.verifyToken], auth.successOrderwithWallet);
 router.get("/cart/cancelOrder/:orderId", [authJwt.verifyToken], auth.cancelOrder);
+router.put("/order/cancelReturnOrder/:id", [authJwt.verifyToken], auth.cancelReturnOrder);
+router.get("/order/getcancelReturnOrder", [authJwt.verifyToken], auth.getcancelReturnOrder);
 router.get("/order/allOrders", [authJwt.verifyToken], auth.getAllOrders);
 router.get("/order/Orders", [authJwt.verifyToken], auth.getOrders);
 router.get("/order/viewOrder/:id", [authJwt.verifyToken], auth.getOrderbyId);
