@@ -866,49 +866,45 @@ exports.KycList = async (req, res) => {
 };
 exports.listProduct = async (req, res) => {
         try {
-                let vendorData = await User.findOne({ _id: req.user._id, userType: userType.VENDOR });
-                if (!vendorData) {
-                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
-                } else {
-                        let query = { status: { $ne: "DELETE" } };
-                        if (req.query.categoryId) {
-                                query.categoryId = req.query.categoryId;
-                        }
-                        if (req.query.subcategoryId) {
-                                query.subcategoryId = req.query.subcategoryId;
-                        }
-                        if (req.query.search) {
-                                query.productName = req.query.search;
-                        }
-                        if ((req.query.fromDate != 'null') && (req.query.toDate == 'null')) {
-                                query.createdAt = { $gte: req.query.fromDate };
-                        }
-                        if ((req.query.fromDate == 'null') && (req.query.toDate != 'null')) {
-                                query.createdAt = { $lte: req.query.toDate };
-                        }
-                        if ((req.query.fromDate != 'null') && (req.query.toDate != 'null')) {
-                                query.$and = [
-                                        { createdAt: { $gte: req.query.fromDate } },
-                                        { createdAt: { $lte: req.query.toDate } },
-                                ]
-                        }
-                        var limit = parseInt(req.query.limit);
-                        var options = {
-                                page: parseInt(req.query.page) || 1,
-                                limit: limit || 10,
-                                sort: { createdAt: -1 },
-                                populate: { path: 'categoryId subcategoryId' }
-                        }
-                        product.paginate(query, options, (transErr, transRes) => {
-                                if (transErr) {
-                                        return res.status(501).send({ message: "Internal Server error" + transErr.message });
-                                } else if (transRes.docs.length == 0) {
-                                        return res.status(200).json({ status: 200, message: "No data found", data: [] });
-                                } else {
-                                        return res.status(200).send({ status: 200, message: "Product data found successfully.", data: transRes });
-                                }
-                        })
+                let query = { status: { $ne: "DELETE" } };
+                if (req.query.categoryId) {
+                        query.categoryId = req.query.categoryId;
                 }
+                if (req.query.subcategoryId) {
+                        query.subcategoryId = req.query.subcategoryId;
+                }
+                if (req.query.search) {
+                        query.productName = req.query.search;
+                }
+                if ((req.query.fromDate != 'null') && (req.query.toDate == 'null')) {
+                        query.createdAt = { $gte: req.query.fromDate };
+                }
+                if ((req.query.fromDate == 'null') && (req.query.toDate != 'null')) {
+                        query.createdAt = { $lte: req.query.toDate };
+                }
+                if ((req.query.fromDate != 'null') && (req.query.toDate != 'null')) {
+                        query.$and = [
+                                { createdAt: { $gte: req.query.fromDate } },
+                                { createdAt: { $lte: req.query.toDate } },
+                        ]
+                }
+                var limit = parseInt(req.query.limit);
+                var options = {
+                        page: parseInt(req.query.page) || 1,
+                        limit: limit || 10,
+                        sort: { createdAt: -1 },
+                        populate: { path: 'categoryId subcategoryId' }
+                }
+                product.paginate(query, options, (transErr, transRes) => {
+                        if (transErr) {
+                                return res.status(501).send({ message: "Internal Server error" + transErr.message });
+                        } else if (transRes.docs.length == 0) {
+                                return res.status(200).json({ status: 200, message: "No data found", data: [] });
+                        } else {
+                                return res.status(200).send({ status: 200, message: "Product data found successfully.", data: transRes });
+                        }
+                })
+
         } catch (error) {
                 console.log(error)
                 return res.status(500).send({ message: "Internal Server error" + error.message });
