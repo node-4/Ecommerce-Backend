@@ -78,7 +78,7 @@ const DocumentSchema = schema({
         },
         returnStatus: {
                 type: String,
-                enum: ["return", "cancel"],
+                enum: ["return", "cancel", ""],
                 default: ""
         },
         returnPickStatus: {
