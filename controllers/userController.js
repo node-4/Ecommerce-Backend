@@ -24,7 +24,7 @@ const order = require("../models/order/orderModel");
 const userOrders = require("../models/order/userOrders");
 const transactionModel = require("../models/transactionModel");
 const cancelReturnOrder = require("../models/order/cancelReturnOrder");
-const Wishlist = require("../model/WishlistModel");
+const Wishlist = require("../models/WishlistModel");
 exports.forgetPassword = async (req, res) => {
         try {
                 const data = await User.findOne({ email: req.body.email });
