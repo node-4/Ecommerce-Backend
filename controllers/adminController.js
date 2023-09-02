@@ -792,7 +792,7 @@ exports.deleteCoupan = async (req, res) => {
                 if (!data) {
                         return res.status(404).json({ message: "Coupan not found.", status: 404, data: {} });
                 }
-                await Coupan.deleteOne({ _id: req.params.id });
+                await Coupan.findByIdAndDelete({ _id: req.params.id });
                 return res.status(200).json({ message: "Coupan  delete.", status: 200, data: {} });
         } catch (err) {
                 return res.status(500).send({ msg: "internal server error", error: err.message, });
