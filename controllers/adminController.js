@@ -852,7 +852,7 @@ exports.KycList = async (req, res) => {
                 if (!vendorData) {
                         return res.status(404).json({ status: 404, message: "No data found", data: {} });
                 } else {
-                        let driverResult = await vendorKyc.find({}).sort({ "createAt": -1 })
+                        let driverResult = await vendorKyc.find({}).sort({ "createAt": -1 }).populate('vendorId')
                         if (driverResult.length == 0) {
                                 return res.status(200).json({ status: 200, msg: "Kyc data fetch.", data: [] })
                         } else {
