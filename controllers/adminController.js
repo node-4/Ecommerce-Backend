@@ -870,6 +870,9 @@ exports.listProduct = async (req, res) => {
                 if (req.query.categoryId) {
                         query.categoryId = req.query.categoryId;
                 }
+                if (req.query.vendorId) {
+                        query.vendorId = req.query.vendorId;
+                }
                 if (req.query.subcategoryId) {
                         query.subcategoryId = req.query.subcategoryId;
                 }
@@ -893,7 +896,7 @@ exports.listProduct = async (req, res) => {
                         page: parseInt(req.query.page) || 1,
                         limit: limit || 10,
                         sort: { createdAt: -1 },
-                        populate: { path: 'categoryId subcategoryId' }
+                        populate: { path: 'categoryId subcategoryId vendorId' }
                 }
                 product.paginate(query, options, (transErr, transRes) => {
                         if (transErr) {
