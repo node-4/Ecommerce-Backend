@@ -9,6 +9,10 @@ var productModel = new Schema({
                 type: Schema.Types.ObjectId,
                 ref: "user"
         },
+        Wishlistuser: {
+                type: [Schema.Types.ObjectId],
+                ref: "user"
+        },
         categoryId: {
                 type: Schema.Types.ObjectId,
                 ref: "Category"

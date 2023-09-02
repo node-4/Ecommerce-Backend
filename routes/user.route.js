@@ -1,6 +1,6 @@
 const auth = require("../controllers/userController");
 const authJwt = require("../middlewares/authJwt");
-const { cpUpload0, upload, upload1, upload2, cpUpload, categoryUpload, subCategoryUpload } = require('../middlewares/imageUpload')
+const { cpUpload0, upload, upload1, upload2, cpUpload, categoryUpload, subCategoryUpload } = require("../middlewares/imageUpload")
 const express = require("express");
 const router = express()
 
@@ -8,10 +8,10 @@ router.post("/user/forgetPassword", auth.forgetPassword);
 router.post("/user/changePassword", auth.changePassword);
 router.get("/user/allCategory/:gender", auth.getCategories);
 router.get("/user/allSubcategoryById/:categoryId", auth.getSubCategoryByCategoryId);
-router.get('/user/Product/list', auth.listProduct);
+router.get("/user/Product/list", auth.listProduct);
 router.post("/product/createProductReview", authJwt.verifyToken, auth.createProductReview);
 router.get("/product/getProductReviews/:id", auth.getProductReviews);
-router.get('/user/listProductVarient', auth.listProductVarient);
+router.get("/user/listProductVarient", auth.listProductVarient);
 router.post("/cart/addtocart", authJwt.verifyToken, auth.addtocart);
 router.get("/cart/getCart", authJwt.verifyToken, auth.getCart);
 router.delete("/cart/deleteCart", authJwt.verifyToken, auth.deleteCart);
@@ -32,7 +32,10 @@ router.get("/order/viewOrder/:id", [authJwt.verifyToken], auth.getOrderbyId);
 router.get("/transaction/allTransactionUser", [authJwt.verifyToken], auth.allTransactionUser);
 router.get("/transaction/allcreditTransactionUser", [authJwt.verifyToken], auth.allcreditTransactionUser);
 router.get("/transaction/allDebitTransactionUser", [authJwt.verifyToken], auth.allDebitTransactionUser);
-router.post('/wallet/addWallet', [authJwt.verifyToken], auth.addMoney);
-router.get('/wallet/getwallet', [authJwt.verifyToken], auth.getWallet);
-router.post('/wallet/sendMoney', [authJwt.verifyToken], auth.sendMoney);
+router.post("/wallet/addWallet", [authJwt.verifyToken], auth.addMoney);
+router.get("/wallet/getwallet", [authJwt.verifyToken], auth.getWallet);
+router.post("/wallet/sendMoney", [authJwt.verifyToken], auth.sendMoney);
+router.post("/user/createWishlist/:id", [authJwt.verifyToken], auth.createWishlist);
+router.post("/user/removeFromWishlist/:id", [authJwt.verifyToken], auth.removeFromWishlist);
+router.get("/user/myWishlist", [authJwt.verifyToken], auth.myWishlist);
 module.exports = router;

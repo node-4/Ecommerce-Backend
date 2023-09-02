@@ -24,7 +24,7 @@ const order = require("../models/order/orderModel");
 const userOrders = require("../models/order/userOrders");
 const transactionModel = require("../models/transactionModel");
 const cancelReturnOrder = require("../models/order/cancelReturnOrder");
-
+const Wishlist = require("../model/WishlistModel");
 exports.forgetPassword = async (req, res) => {
         try {
                 const data = await User.findOne({ email: req.body.email });
@@ -1316,6 +1316,66 @@ exports.getcancelReturnOrder = async (req, res, next) => {
                         return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
                 }
                 return res.status(200).json({ status: 200, msg: "orders of user", data: orders })
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.createWishlist = async (req, res, next) => {
+        try {
+                const productId = req.params.id;
+                const viewProduct = await product.findById(productId);
+                let wishList = await Wishlist.findOne({ user: req.user._id });
+                if (!wishList) {
+                        wishList = new Wishlist({ user: req.user._id, });
+                }
+                wishList.products.addToSet(productId);
+                viewProduct.Wishlistuser.addToSet(req.user._id);
+                await wishList.save();
+                await viewProduct.save();
+                return res.status(200).json({ status: 200, message: "product add to wishlist Successfully", });
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.removeFromWishlist = async (req, res, next) => {
+        try {
+                const wishlist = await Wishlist.findOne({ user: req.user._id });
+                if (!wishlist) {
+                        return res.status(404).json({ message: "Wishlist not found", status: 404 });
+                }
+                const productId = req.params.id;
+                const viewProduct = await product.findById(productId);
+                wishlist.products.pull(productId);
+                viewProduct.Wishlistuser.pull(req.user._id);
+                await wishlist.save();
+                await viewProduct.save();
+                return res.status(200).json({ status: 200, message: "Removed From Wishlist", });
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.myWishlist = async (req, res, next) => {
+        try {
+                let myList = await Wishlist.findOne({ user: req.user._id }).populate('products');
+                if (!myList) {
+                        myList = await Wishlist.create({ user: req.user._id });
+                }
+                let array = []
+                for (let i = 0; i < myList.products.length; i++) {
+                        const data = await product.findById(myList.products[i]._id).populate('categoryId subcategoryId').populate('colors')
+                        array.push(data)
+                }
+                let obj = {
+                        _id: myList._id,
+                        user: myList.user,
+                        products: array,
+                        __v: myList.__v
+                }
+
+                return res.status(200).json({ status: 200, wishlist: obj, });
         } catch (error) {
                 console.log(error);
                 return res.status(501).send({ status: 501, message: "server error.", data: {}, });
