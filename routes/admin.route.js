@@ -45,7 +45,7 @@ router.post("/notification/sendNotification", authJwt.verifyToken, auth.sendNoti
 router.get("/notification/allNotification", authJwt.verifyToken, auth.allNotification);
 router.post("/Coupan/addCoupan", [authJwt.verifyToken], auth.addCoupan);
 router.get("/Coupan/listCoupan", [authJwt.verifyToken], auth.listCoupan);
-router.delete("/Coupan/:id", [authJwt.verifyToken], auth.deleteHelpandSupport);
+router.delete("/Coupan/:id", [authJwt.verifyToken], auth.deleteCoupan);
 router.put("/kyc/vendorKycVerification", [authJwt.verifyToken], auth.vendorKycVerification);
 router.get("/admin/KycList", [authJwt.verifyToken], auth.KycList);
 router.get('/admin/Product/list', auth.listProduct);
