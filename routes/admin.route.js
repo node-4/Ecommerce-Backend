@@ -56,4 +56,5 @@ router.get("/admin/getcancelReturnOrder", [authJwt.verifyToken], auth.getcancelR
 router.put("/admin/acceptRejectCancelReturnOrder/:id", [authJwt.verifyToken], auth.acceptRejectCancelReturnOrder);
 router.post("/admin/Offer/addOffer", [authJwt.verifyToken], offerUpload.single('image'), auth.addOffer);
 router.get("/admin/Offer/listOffer", auth.listOffer);
+router.put("/admin/refundPayment/:id", [authJwt.verifyToken], auth.refundPayment);
 module.exports = router;

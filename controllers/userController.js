@@ -1272,23 +1272,41 @@ exports.cancelReturnOrder = async (req, res, next) => {
                 if (!orders) {
                         return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
                 } else {
-                        let obj = {
-                                userId: orders.userId,
-                                vendorId: orders.vendorId,
-                                Orders: orders._id,
-                                reason: req.body.reason,
-                                orderStatus: req.body.orderStatus,
-                                pickStatus: "Pending"
-                        }
-                        const data = await cancelReturnOrder.create(obj);
-                        let update = await order.findByIdAndUpdate({ _id: orders._id }, { $set: { returnOrder: data._id, returnStatus: req.body.orderStatus, returnPickStatus: "Pending" } }, { new: true }).populate('returnOrder');
-                        if (update) {
-                                res.status(200).json({ message: `Order ${req.body.orderStatus} Successfully.`, status: 200, data: update });
+                        if (orders.orderStatus == "Delivered") {
+                                let obj = {
+                                        userId: orders.userId,
+                                        vendorId: orders.vendorId,
+                                        Orders: orders._id,
+                                        reason: req.body.reason,
+                                        orderStatus: "return",
+                                        pickStatus: "Pending"
+                                }
+                                const data = await cancelReturnOrder.create(obj);
+                                let update = await order.findByIdAndUpdate({ _id: orders._id }, { $set: { returnOrder: data._id, returnStatus: "return", returnPickStatus: "Pending" } }, { new: true }).populate('returnOrder');
+                                if (update) {
+                                        return res.status(200).json({ message: `Order return Successfully.`, status: 200, data: update });
+                                }
+                        } else if ((orders.orderStatus == "confirmed") || (orders.orderStatus == "Processing") || (orders.orderStatus == "QualityCheck")) {
+                                let obj = {
+                                        userId: orders.userId,
+                                        vendorId: orders.vendorId,
+                                        Orders: orders._id,
+                                        reason: req.body.reason,
+                                        orderStatus: "cancel",
+                                        pickStatus: "Pending"
+                                }
+                                const data = await cancelReturnOrder.create(obj);
+                                let update = await order.findByIdAndUpdate({ _id: orders._id }, { $set: { returnOrder: data._id, returnStatus: "cancel", returnPickStatus: "Pending" } }, { new: true }).populate('returnOrder');
+                                if (update) {
+                                        return res.status(200).json({ message: `Order cancel Successfully.`, status: 200, data: update });
+                                }
+                        } else {
+                                return res.status(200).json({ message: `Order can not cancel because order is dispatched.`, status: 200, data: orders });
                         }
                 }
         } catch (error) {
                 console.log(error);
-                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 exports.getcancelReturnOrder = async (req, res, next) => {
@@ -1300,7 +1318,7 @@ exports.getcancelReturnOrder = async (req, res, next) => {
                 return res.status(200).json({ status: 200, msg: "orders of user", data: orders })
         } catch (error) {
                 console.log(error);
-                res.status(501).send({ status: 501, message: "server error.", data: {}, });
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 const reffralCode = async () => {

@@ -810,32 +810,33 @@ exports.vendorKycVerification = async (req, res) => {
                         if (!findVendorKyc) {
                                 return res.status(404).json({ message: "Kyc document not found.", status: 404, data: {} });
                         } else {
+                                // UPLOADED','PENDING','APPROVED','REJECT'
                                 let updateKyc;
-                                if (req.body.kycStatus == kycStatus.APPROVED) {
-                                        updateKyc = await vendorKyc.findByIdAndUpdate({ _id: findVendorKyc._id }, { $set: { kycStatus: kycStatus.APPROVED } }, { new: true });
+                                if (req.body.kycStatus == 'APPROVED') {
+                                        updateKyc = await vendorKyc.findByIdAndUpdate({ _id: findVendorKyc._id }, { $set: { kycStatus: 'APPROVED' } }, { new: true });
                                         if (updateKyc) {
-                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyc.vendorId }, { $set: { kycStatus: kycStatus.APPROVED } }, { new: true });
+                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyc.vendorId }, { $set: { kycStatus: 'APPROVED' } }, { new: true });
                                                 let findVendorKyc1 = await vendorKyc.findOne({ _id: req.body.kycId });
                                                 return res.status(200).json({ message: "Kyc verification update successfully.", status: 200, data: findVendorKyc1 });
                                         }
-                                } else if (req.body.kycStatus == kycStatus.REJECT) {
-                                        updateKyc = await vendorKyc.findByIdAndUpdate({ _id: findVendorKyc._id }, { $set: { kycStatus: kycStatus.REJECT } }, { new: true });
+                                } else if (req.body.kycStatus == "REJECT") {
+                                        updateKyc = await vendorKyc.findByIdAndUpdate({ _id: findVendorKyc._id }, { $set: { kycStatus: "REJECT" } }, { new: true });
                                         if (updateKyc) {
-                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyc.vendorId }, { $set: { kycStatus: kycStatus.REJECT } }, { new: true });
+                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyc.vendorId }, { $set: { kycStatus: "REJECT" } }, { new: true });
                                                 let findVendorKyc1 = await vendorKyc.findOne({ _id: req.body.kycId });
                                                 return res.status(200).json({ message: "Kyc verification update successfully.", status: 200, data: findVendorKyc1 });
                                         }
-                                } else if (req.body.kycStatus == kycStatus.PENDING) {
-                                        updateKyc = await vendorKyc.findByIdAndUpdate({ _id: findVendorKyc._id }, { $set: { kycStatus: kycStatus.PENDING } }, { new: true });
+                                } else if (req.body.kycStatus == "PENDING") {
+                                        updateKyc = await vendorKyc.findByIdAndUpdate({ _id: findVendorKyc._id }, { $set: { kycStatus: "PENDING" } }, { new: true });
                                         if (updateKyc) {
-                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyc.vendorId }, { $set: { kycStatus: kycStatus.PENDING } }, { new: true });
+                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyc.vendorId }, { $set: { kycStatus: "PENDING" } }, { new: true });
                                                 let findVendorKyc1 = await vendorKyc.findOne({ _id: req.body.kycId });
                                                 return res.status(200).json({ message: "Kyc verification update successfully.", status: 200, data: findVendorKyc1 });
                                         }
-                                } else if (req.body.kycStatus == kycStatus.UPLOADED) {
-                                        updateKyc = await vendorKyc.findByIdAndUpdate({ _id: findVendorKyc._id }, { $set: { kycStatus: kycStatus.UPLOADED } }, { new: true });
+                                } else if (req.body.kycStatus == "UPLOADED") {
+                                        updateKyc = await vendorKyc.findByIdAndUpdate({ _id: findVendorKyc._id }, { $set: { kycStatus: "UPLOADED" } }, { new: true });
                                         if (updateKyc) {
-                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyc.vendorId }, { $set: { kycStatus: kycStatus.UPLOADED } }, { new: true });
+                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyc.vendorId }, { $set: { kycStatus: "UPLOADED" } }, { new: true });
                                                 let findVendorKyc1 = await vendorKyc.findOne({ _id: req.body.kycId });
                                                 return res.status(200).json({ message: "Kyc verification update successfully.", status: 200, data: findVendorKyc1 });
                                         }
@@ -1187,20 +1188,39 @@ exports.refundPayment = async (req, res) => {
                         if (!findOrder) {
                                 return res.status(404).json({ message: "User not found.", status: 404, data: {} });
                         } else {
-                                let update = await User.findByIdAndUpdate({ _id: data._id }, { $set: { wallet: data.wallet + parseInt(req.body.balance) } }, { new: true });
-                                if (update) {
-                                        let obj = {
-                                                user: req.user._id,
-                                                date: Date.now(),
-                                                amount: req.body.balance,
-                                                type: "Credit",
-                                                relatedPayments: "AddMoney"
-                                        };
-                                        const data1 = await transactionModel.create(obj);
-                                        if (data1) {
-                                                return res.status(200).json({ status: 200, message: "Money has been added.", data: update, });
+                                const orders = await order.findById({ _id: findOrder.Orders })
+                                if (!orders) {
+                                        return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
+                                }
+                                if (orders.paymentStatus == "paid") {
+                                        let userData1 = await User.findOne({ _id: findOrder.userId });
+                                        if (!userData1) {
+                                                return res.status(404).json({ status: 404, message: "User not found" });
                                         }
-
+                                        let update = await User.findByIdAndUpdate({ _id: userData1._id }, { $set: { wallet: userData1.wallet + parseInt(orders.total) } }, { new: true });
+                                        if (update) {
+                                                let upda = await cancelReturnOrder.findByIdAndUpdate({ _id: findOrder._id }, { $set: { refundStatus: "paid" } }, { new: true });
+                                                await order.findByIdAndUpdate({ _id: orders._id }, { $set: { refundStatus: "paid" } }, { new: true });
+                                                let obj = {
+                                                        user: findOrder.userId,
+                                                        date: Date.now(),
+                                                        amount: orders.total,
+                                                        type: "Credit",
+                                                        relatedPayments: "Refund"
+                                                };
+                                                const data1 = await transactionModel.create(obj);
+                                                if (data1) {
+                                                        return res.status(200).json({ status: 200, message: "Rufund payment successfully.", data: upda, });
+                                                }
+                                        }
+                                } else {
+                                        let userData1 = await User.findOne({ _id: findOrder.userId });
+                                        if (!userData1) {
+                                                return res.status(404).json({ status: 404, message: "User not found" });
+                                        }
+                                        let upda = await cancelReturnOrder.findByIdAndUpdate({ _id: findOrder._id }, { $set: { refundStatus: "paid" } }, { new: true });
+                                        await order.findByIdAndUpdate({ _id: orders._id }, { $set: { refundStatus: "paid" } }, { new: true });
+                                        return res.status(200).json({ status: 200, message: "Rufund payment successfully.", data: upda, });
                                 }
                         }
                 }
