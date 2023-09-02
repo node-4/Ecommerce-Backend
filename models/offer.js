@@ -6,6 +6,10 @@ const FeedbackSchema = new mongoose.Schema(
             type: schema.Types.ObjectId,
             ref: "user"
         },
+        vendorId: {
+            type: schema.Types.ObjectId,
+            ref: "user"
+        },
         categoryId: {
             type: schema.Types.ObjectId,
             ref: "Category"
@@ -36,6 +40,10 @@ const FeedbackSchema = new mongoose.Schema(
         type: {
             type: String,
             enum: ["user", "other"]
+        },
+        addBy: {
+            type: String,
+            enum: ["Vendor", "Admin"]
         },
         status: {
             type: Boolean,

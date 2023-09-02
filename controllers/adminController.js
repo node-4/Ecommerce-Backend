@@ -14,8 +14,6 @@ const notification = require("../models/notification");
 const Coupan = require('../models/Coupan')
 const vendorKyc = require("../models/vendorKyc");
 const product = require('../models/productModel');
-const categoryModel = require("../models/categoryModel");
-const subCategoryModel = require("../models/subCategoryModel");
 const cancelReturnOrder = require("../models/order/cancelReturnOrder");
 const offer = require('../models/offer');
 exports.registration = async (req, res) => {
@@ -967,8 +965,8 @@ exports.listProductVarient = async (req, res) => {
 exports.dashboard = async (req, res, next) => {
         try {
                 const findProduct = await product.find({}).count()
-                const category = await categoryModel.find({}).count()
-                const subcategory = await subCategoryModel.find({}).count()
+                const category = await Category.find({}).count()
+                const subcategory = await subCategory.find({}).count()
                 const user = await User.find({ userType: "USER" }).count()
                 const vendor = await User.find({ userType: "VENDOR" }).count()
                 let obj = {
@@ -1062,7 +1060,8 @@ exports.addOffer = async (req, res) => {
                                                 expirationDate: expirationDate,
                                                 activationDate: activationDate,
                                                 image: fileUrl,
-                                                type: "user"
+                                                type: "user",
+                                                addBy: "Admin"
                                         }
                                         let saveStore = await offer(obj).save();
                                         if (saveStore) {
@@ -1092,7 +1091,8 @@ exports.addOffer = async (req, res) => {
                                                 expirationDate: expirationDate,
                                                 activationDate: activationDate,
                                                 image: fileUrl,
-                                                type: "user"
+                                                type: "user",
+                                                addBy: "Admin"
                                         }
                                         let saveStore = await offer(obj).save();
                                         if (saveStore) {
@@ -1122,7 +1122,8 @@ exports.addOffer = async (req, res) => {
                                                 expirationDate: expirationDate,
                                                 activationDate: activationDate,
                                                 image: fileUrl,
-                                                type: "other"
+                                                type: "other",
+                                                addBy: "Admin"
                                         }
                                         let saveStore = await offer(obj).save();
                                         if (saveStore) {
@@ -1151,7 +1152,8 @@ exports.addOffer = async (req, res) => {
                                                 expirationDate: expirationDate,
                                                 activationDate: activationDate,
                                                 image: fileUrl,
-                                                type: "other"
+                                                type: "other",
+                                                addBy: "Admin"
                                         }
                                         let saveStore = await offer(obj).save();
                                         if (saveStore) {
@@ -1201,12 +1203,19 @@ exports.refundPayment = async (req, res) => {
                                         if (update) {
                                                 let upda = await cancelReturnOrder.findByIdAndUpdate({ _id: findOrder._id }, { $set: { refundStatus: "paid" } }, { new: true });
                                                 await order.findByIdAndUpdate({ _id: orders._id }, { $set: { refundStatus: "paid" } }, { new: true });
+                                                let relatedPayments;
+                                                if (orders.returnStatus == "return") {
+                                                        relatedPayments = "Return Refund";
+                                                }
+                                                if (orders.returnStatus == "cancel") {
+                                                        relatedPayments = "Cancellation Refund";
+                                                }
                                                 let obj = {
                                                         user: findOrder.userId,
                                                         date: Date.now(),
                                                         amount: orders.total,
                                                         type: "Credit",
-                                                        relatedPayments: "Refund"
+                                                        relatedPayments: relatedPayments
                                                 };
                                                 const data1 = await transactionModel.create(obj);
                                                 if (data1) {

@@ -23,6 +23,7 @@ const order = require("../models/order/orderModel");
 const userOrders = require("../models/order/userOrders");
 const vendorKyc = require("../models/vendorKyc");
 const cancelReturnOrder = require("../models/order/cancelReturnOrder");
+const offer = require('../models/offer');
 exports.registration = async (req, res) => {
         try {
                 const { phone, userType } = req.body;
@@ -1248,6 +1249,124 @@ exports.getcancelReturnOrder = async (req, res, next) => {
         } catch (error) {
                 console.log(error);
                 res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.addOffer = async (req, res) => {
+        try {
+                if (req.body.userId != (null || undefined)) {
+                        let vendorData = await User.findOne({ _id: req.body.userId });
+                        if (!vendorData) {
+                                return res.status(404).send({ status: 404, message: "User not found" });
+                        }
+                        const findProduct = await product.findById({ _id: req.body.productId });
+                        if (!findProduct) {
+                                return res.status(404).json({ message: "Product Not Found", status: 404, data: {} });
+                        } else {
+                                let fileUrl;
+                                if (req.file) {
+                                        fileUrl = req.file ? req.file.path : "";
+                                }
+                                const d = new Date(req.body.expirationDate);
+                                let expirationDate = d.toISOString();
+                                const de = new Date(req.body.activationDate);
+                                let activationDate = de.toISOString();
+                                let couponCode = await reffralCode();
+                                let obj = {
+                                        vendorId: req.user._id,
+                                        userId: req.body.userId,
+                                        productId: findProduct._id,
+                                        couponCode: couponCode,
+                                        amount: req.body.amount,
+                                        expirationDate: expirationDate,
+                                        activationDate: activationDate,
+                                        image: fileUrl,
+                                        type: "user",
+                                        addBy: "Vendor"
+                                }
+                                let saveStore = await offer(obj).save();
+                                if (saveStore) {
+                                        res.json({ status: 200, message: 'offer add successfully.', data: saveStore });
+                                }
+                        }
+                } else {
+                        const findProduct = await product.findById({ _id: req.body.productId });
+                        if (!findProduct) {
+                                return res.status(404).json({ message: "Product Not Found", status: 404, data: {} });
+                        } else {
+                                let fileUrl;
+                                if (req.file) {
+                                        fileUrl = req.file ? req.file.path : "";
+                                }
+                                const d = new Date(req.body.expirationDate);
+                                let expirationDate = d.toISOString();
+                                const de = new Date(req.body.activationDate);
+                                let activationDate = de.toISOString();
+                                let couponCode = await reffralCode();
+                                let obj = {
+                                        vendorId: req.user._id,
+                                        couponCode: couponCode,
+                                        amount: req.body.amount,
+                                        expirationDate: expirationDate,
+                                        activationDate: activationDate,
+                                        image: fileUrl,
+                                        type: "other",
+                                        addBy: "Vendor"
+                                }
+                                let saveStore = await offer(obj).save();
+                                if (saveStore) {
+                                        res.json({ status: 200, message: 'offer add successfully.', data: saveStore });
+                                }
+                        }
+                }
+        } catch (error) {
+                console.error(error);
+                return res.status(500).send({ status: 500, message: "Server error" + error.message });
+        }
+};
+exports.listOffer = async (req, res) => {
+        try {
+                let findService = await offer.find({ vendorId: req.user._id });
+                if (findService.length == 0) {
+                        return res.status(404).send({ status: 404, message: "Data not found" });
+                } else {
+                        return res.json({ status: 200, message: 'Offer Data found successfully.', service: findService });
+                }
+        } catch (error) {
+                console.error(error);
+                return res.status(500).send({ status: 500, message: "Server error" + error.message });
+        }
+};
+exports.dashboard = async (req, res, next) => {
+        try {
+                const findProduct = await product.find({ vendorId: req.user._id }).count()
+                const findCategory = await Category.find({ vendorId: req.user._id }).count()
+                const findOrder = await order.find({ vendorId: req.user._id }).count()
+                let obj = {
+                        product: findProduct,
+                        category: findCategory,
+                        order: findOrder,
+                }
+                return res.status(200).json({ status: 200, msg: "Get dashboard", data: obj })
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.changeOrderStatus = async (req, res) => {
+        try {
+                let userData = await User.findOne({ _id: req.user._id });
+                if (!userData) {
+                        return res.status(404).json({ status: 404, message: "User not found" });
+                } else {
+                        const orders = await order.findById({ _id: req.params.id })
+                        if (!orders) {
+                                return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
+                        }
+                        let findUser = await order.findByIdAndUpdate({ _id: orders._id }, { $set: { orderStatus: req.body.orderStatus } }, { new: true });
+                        return res.status(200).json({ message: "Reject return successfully.", status: 200, data: findUser });
+                }
+        } catch (error) {
+                return res.status(500).send({ msg: "internal server error", error: error, });
         }
 };
 const reffralCode = async () => {

@@ -1,7 +1,7 @@
 const auth = require("../controllers/vendorController");
 const user = require("../controllers/userController");
 const authJwt = require("../middlewares/authJwt");
-const { cpUpload0, upload, upload1, upload2, cpUpload, categoryUpload, subCategoryUpload } = require('../middlewares/imageUpload')
+const { cpUpload0, upload, upload1, upload2, cpUpload, categoryUpload, offerUpload, subCategoryUpload } = require('../middlewares/imageUpload')
 const express = require("express");
 const router = express()
 router.post("/vendor/registration", auth.registration);
@@ -43,4 +43,8 @@ router.get("/vendor/Orders", [authJwt.verifyToken], auth.getOrders);
 router.post("/kyc/addKYC", [authJwt.verifyToken], cpUpload, auth.addKYC);
 router.get("/kyc/KycList", [authJwt.verifyToken], auth.KycList);
 router.get("/vendor/getcancelReturnOrder", [authJwt.verifyToken], auth.getcancelReturnOrder);
+router.post("/vendor/Offer/addOffer", [authJwt.verifyToken], offerUpload.single('image'), auth.addOffer);
+router.get("/vendor/Offer/listOffer", [authJwt.verifyToken], auth.listOffer);
+router.get('/vendor/dashboard', [authJwt.verifyToken], auth.dashboard);
+router.put("/order/changeOrderStatus/:id", [authJwt.verifyToken], auth.changeOrderStatus);
 module.exports = router;
