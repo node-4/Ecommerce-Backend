@@ -56,7 +56,14 @@ var userSchema = new schema(
                         type: schema.Types.ObjectId,
                         ref: "vendorKyc"
                 },
+                kybDocumentId: {
+                        type: schema.Types.ObjectId,
+                        ref: "vendorKyb"
+                },
                 kycStatus: {
+                        type: String,
+                },
+                kybStatus: {
                         type: String,
                 },
                 userType: {

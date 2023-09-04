@@ -16,6 +16,8 @@ const vendorKyc = require("../models/vendorKyc");
 const product = require('../models/productModel');
 const cancelReturnOrder = require("../models/order/cancelReturnOrder");
 const offer = require('../models/offer');
+const vendorKyb = require("../models/vendorKyb");
+const vendorCod = require("../models/vendorCod");
 exports.registration = async (req, res) => {
         const { phone, email } = req.body;
         try {
@@ -846,6 +848,52 @@ exports.vendorKycVerification = async (req, res) => {
                 return res.status(500).send({ msg: "internal server error", error: error, });
         }
 };
+exports.vendorKybVerification = async (req, res) => {
+        try {
+                let userData = await User.findOne({ _id: req.user._id });
+                if (!userData) {
+                        return res.status(404).json({ status: 404, message: "User not found" });
+                } else {
+                        let findVendorKyb = await vendorKyb.findOne({ _id: req.body.kybId });
+                        if (!findVendorKyb) {
+                                return res.status(404).json({ message: "Kyc document not found.", status: 404, data: {} });
+                        } else {
+                                let updateKyb;
+                                if (req.body.kybStatus == 'APPROVED') {
+                                        updateKyb = await vendorKyb.findByIdAndUpdate({ _id: findVendorKyb._id }, { $set: { kybStatus: 'APPROVED' } }, { new: true });
+                                        if (updateKyb) {
+                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyb.vendorId }, { $set: { kybStatus: 'APPROVED' } }, { new: true });
+                                                let findVendorKyb1 = await vendorKyb.findOne({ _id: req.body.kybId });
+                                                return res.status(200).json({ message: "Kyc verification update successfully.", status: 200, data: findVendorKyb1 });
+                                        }
+                                } else if (req.body.kybStatus == "REJECT") {
+                                        updateKyb = await vendorKyb.findByIdAndUpdate({ _id: findVendorKyb._id }, { $set: { kybStatus: "REJECT" } }, { new: true });
+                                        if (updateKyb) {
+                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyb.vendorId }, { $set: { kybStatus: "REJECT" } }, { new: true });
+                                                let findVendorKyb1 = await vendorKyb.findOne({ _id: req.body.kybId });
+                                                return res.status(200).json({ message: "Kyc verification update successfully.", status: 200, data: findVendorKyb1 });
+                                        }
+                                } else if (req.body.kybStatus == "PENDING") {
+                                        updateKyb = await vendorKyb.findByIdAndUpdate({ _id: findVendorKyb._id }, { $set: { kybStatus: "PENDING" } }, { new: true });
+                                        if (updateKyb) {
+                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyb.vendorId }, { $set: { kybStatus: "PENDING" } }, { new: true });
+                                                let findVendorKyb1 = await vendorKyb.findOne({ _id: req.body.kybId });
+                                                return res.status(200).json({ message: "Kyc verification update successfully.", status: 200, data: findVendorKyb1 });
+                                        }
+                                } else if (req.body.kybStatus == "UPLOADED") {
+                                        updateKyb = await vendorKyb.findByIdAndUpdate({ _id: findVendorKyb._id }, { $set: { kybStatus: "UPLOADED" } }, { new: true });
+                                        if (updateKyb) {
+                                                let userData1 = await User.findByIdAndUpdate({ _id: updateKyb.vendorId }, { $set: { kybStatus: "UPLOADED" } }, { new: true });
+                                                let findVendorKyb1 = await vendorKyb.findOne({ _id: req.body.kybId });
+                                                return res.status(200).json({ message: "Kyc verification update successfully.", status: 200, data: findVendorKyb1 });
+                                        }
+                                }
+                        }
+                }
+        } catch (error) {
+                return res.status(500).send({ msg: "internal server error", error: error, });
+        }
+};
 exports.KycList = async (req, res) => {
         try {
                 const vendorData = await User.findOne({ _id: req.user._id, });
@@ -1238,6 +1286,123 @@ exports.refundPayment = async (req, res) => {
                 }
         } catch (error) {
                 return res.status(500).send({ msg: "internal server error", error: error, });
+        }
+};
+exports.listTicket = async (req, res) => {
+        try {
+                let findUser = await User.findOne({ _id: req.user._id });
+                if (!findUser) {
+                        return res.status(404).send({ status: 404, message: "User not found" });
+                } else {
+                        let findTicket = await ticket.find({});
+                        if (findTicket.length == 0) {
+                                return res.status(404).send({ status: 404, message: "Data not found" });
+                        } else {
+                                res.json({ status: 200, message: 'Ticket Data found successfully.', data: findTicket });
+                        }
+                }
+        } catch (error) {
+                console.error(error);
+                return res.status(500).send({ status: 500, message: "Server error" + error.message });
+        }
+};
+exports.replyOnTicket = async (req, res) => {
+        try {
+                const data = await User.findOne({ _id: req.user._id, });
+                if (data) {
+                        const data1 = await ticket.findById({ _id: req.params.id });
+                        if (data1) {
+                                let obj = {
+                                        comment: req.body.comment,
+                                        byUser: false,
+                                        byAdmin: true,
+                                        date: Date.now(),
+                                }
+                                let update = await ticket.findByIdAndUpdate({ _id: data1._id }, { $push: { messageDetails: obj } }, { new: true })
+                                return res.status(200).json({ status: 200, message: "Ticket found successfully.", data: update });
+                        } else {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        }
+                } else {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.closeTicket = async (req, res) => {
+        try {
+                const data = await User.findOne({ _id: req.user._id, });
+                if (data) {
+                        const data1 = await ticket.findById({ _id: req.params.id });
+                        if (data1) {
+                                let update = await ticket.findByIdAndUpdate({ _id: data1._id }, { $set: { close: true } }, { new: true })
+                                return res.status(200).json({ status: 200, message: "Ticket close successfully.", data: update });
+                        } else {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        }
+                } else {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.addCodTovendor = async (req, res) => {
+        try {
+                const data = await User.findById({ _id: req.body.vendorId });
+                if (!data) {
+                        return res.status(400).send({ msg: "not found" });
+                } else {
+                        let obj = {
+                                userId: data._id,
+                                cod: req.body.cod,
+                        }
+                        const userCreate = await vendorCod.create(obj)
+                        return res.status(200).send({ msg: "Cod Data add", data: userCreate });
+                }
+        } catch (err) {
+                console.log(err.message);
+                return res.status(500).send({ msg: "internal server error", error: err.message, });
+        }
+};
+exports.editCodTovendor = async (req, res) => {
+        try {
+                const data = await User.findOne({ _id: req.user._id, });
+                if (data) {
+                        const data1 = await vendorCod.findById({ _id: req.params.id });
+                        if (data1) {
+                                let update = await vendorCod.findByIdAndUpdate({ _id: data1._id }, { $set: { cod: req.body.cod } }, { new: true })
+                                return res.status(200).json({ status: 200, message: "vendorCod update successfully.", data: update });
+                        } else {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        }
+                } else {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.listCod = async (req, res) => {
+        try {
+                let findUser = await User.findOne({ _id: req.user._id });
+                if (!findUser) {
+                        return res.status(404).send({ status: 404, message: "User not found" });
+                } else {
+                        let findTicket = await vendorCod.find({}).populate('userId');
+                        if (findTicket.length == 0) {
+                                return res.status(404).send({ status: 404, message: "Data not found" });
+                        } else {
+                                res.json({ status: 200, message: 'Vendor Cod Data found successfully.', data: findTicket });
+                        }
+                }
+        } catch (error) {
+                console.error(error);
+                return res.status(500).send({ status: 500, message: "Server error" + error.message });
         }
 };
 const reffralCode = async () => {

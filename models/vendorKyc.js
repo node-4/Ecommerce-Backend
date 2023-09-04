@@ -8,13 +8,16 @@ const DocumentSchema = schema({
                 type: schema.Types.ObjectId,
                 ref: "user"
         },
-        aadhar: {
+        passPort: {
                 type: String
         },
-        panCard: {
+        socialSecurityCard: {
                 type: String
         },
-        gstNO: {
+        dL: {
+                type: String
+        },
+        voterIdentityCard: {
                 type: String
         },
         addressProof: {

@@ -47,6 +47,7 @@ router.post("/Coupan/addCoupan", [authJwt.verifyToken], auth.addCoupan);
 router.get("/Coupan/listCoupan", [authJwt.verifyToken], auth.listCoupan);
 router.delete("/Coupan/:id", [authJwt.verifyToken], auth.deleteCoupan);
 router.put("/kyc/vendorKycVerification", [authJwt.verifyToken], auth.vendorKycVerification);
+router.put("/kyc/vendorKybVerification", [authJwt.verifyToken], auth.vendorKybVerification);
 router.get("/admin/KycList", [authJwt.verifyToken], auth.KycList);
 router.get('/admin/Product/list', auth.listProduct);
 router.delete('/admin/Product/delete/:id', authJwt.verifyToken, auth.deleteProduct);
@@ -57,4 +58,10 @@ router.put("/admin/acceptRejectCancelReturnOrder/:id", [authJwt.verifyToken], au
 router.post("/admin/Offer/addOffer", [authJwt.verifyToken], offerUpload.single('image'), auth.addOffer);
 router.get("/admin/Offer/listOffer", auth.listOffer);
 router.put("/admin/refundPayment/:id", [authJwt.verifyToken], auth.refundPayment);
+router.get("/admin/ticket/listTicket", [authJwt.verifyToken], auth.listTicket);
+router.put('/admin/replyOnTicket/:id', [authJwt.verifyToken], auth.replyOnTicket);
+router.put('/admin/closeTicket/:id', [authJwt.verifyToken], auth.closeTicket);
+router.post('/admin/addCodTovendor', [authJwt.verifyToken], auth.addCodTovendor);
+router.put('/admin/updateCodTovendor/:id', [authJwt.verifyToken], auth.editCodTovendor);
+router.get("/admin/listCod", [authJwt.verifyToken], auth.listCod);
 module.exports = router;

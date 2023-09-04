@@ -75,6 +75,10 @@ const DocumentSchema = schema({
         extimatedDelivery: {
                 type: String,
         },
+        deliveryCharges: {
+                type: Number,
+                default: 0
+        },
         paymentOption: {
                 type: String,
                 enum: ["PrePaid", "PostPaid"],

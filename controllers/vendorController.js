@@ -22,6 +22,7 @@ const productVarient = require('../models/productVarient');
 const order = require("../models/order/orderModel");
 const userOrders = require("../models/order/userOrders");
 const vendorKyc = require("../models/vendorKyc");
+const vendorKyb = require("../models/vendorKyb");
 const cancelReturnOrder = require("../models/order/cancelReturnOrder");
 const offer = require('../models/offer');
 exports.registration = async (req, res) => {
@@ -32,9 +33,11 @@ exports.registration = async (req, res) => {
                         req.body.refferalCode = await reffralCode();
                         if (userType == "VENDOR") {
                                 req.body.kycStatus = kycStatus.PENDING;
+                                req.body.kybStatus = kycStatus.PENDING;
                         }
                         if (userType == "USER") {
                                 req.body.kycStatus = kycStatus.APPROVED;
+                                req.body.kybStatus = kycStatus.APPROVED;
                                 req.body.status = "Active";
                         }
                         req.body.password = bcrypt.hashSync(req.body.password);
@@ -129,10 +132,13 @@ exports.socialLogin = async (req, res) => {
                 } else {
                         let kycStatus;
                         if (userType == "VENDOR") {
-                                kycStatus = kycStatus.PENDING;
+                                req.body.kycStatus = kycStatus.PENDING;
+                                req.body.kybStatus = kycStatus.PENDING;
                         }
                         if (userType == "USER") {
-                                kycStatus = kycStatus.APPROVED;
+                                req.body.kycStatus = kycStatus.APPROVED;
+                                req.body.kybStatus = kycStatus.APPROVED;
+                                req.body.status = "Active";
                         }
                         let refferalCode = await reffralCode();
                         const newUser = await User.create({ firstName, lastName, phone, email, kycStatus, refferalCode, userType: userType });
@@ -216,6 +222,7 @@ exports.signin = async (req, res) => {
                 let obj = {
                         userType: user.userType,
                         kycStatus: user.kycStatus,
+                        kybStatus: user.kybStatus,
                         accessToken: accessToken
                 }
                 return res.status(201).send({ message: "Login successfully", data: obj });
@@ -1172,53 +1179,36 @@ exports.getOrders = async (req, res, next) => {
 };
 exports.addKYC = async (req, res) => {
         try {
-                const vendorData = await User.findOne({ _id: req.user._id, });
-                if (!vendorData) {
-                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                const vendorData = await User.findOne({ _id: req.user._id });
+                if (!vendorData) return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                const findKyc = await vendorKyc.findOne({ VendorId: vendorData._id });
+                const kycFields = [
+                        'passPort', 'socialSecurityCard', 'dL', 'voterIdentityCard', 'addressProof',
+                ];
+                const kycFiles = kycFields.reduce((acc, field) => {
+                        if (req.files[field]) acc[field] = req.files[field][0].path;
+                        return acc;
+                }, {});
+                if (findKyc) {
+                        const result = await vendorKyc.findByIdAndUpdate({ _id: findKyc._id }, { $set: req.body, ...kycFiles }, { new: true });
+                        if (result) {
+                                const userData1 = await User.findByIdAndUpdate({ _id: vendorData._id }, { $set: { kycStatus: kycStatus.UPLOADED, kycDocumentId: result._id } }, { new: true });
+                                const userData2 = await User.findById({ _id: userData1._id }).populate('kycDocumentId');
+                                return res.status(200).json({ status: 200, msg: "KYC upload", data: userData2 });
+                        }
                 } else {
-                        let findKyc = await vendorKyc.findOne({ VendorId: vendorData._id });
-                        if (findKyc) {
-                                let aadhar = req.files['aadhar'];
-                                let panCard = req.files['panCard'];
-                                let gstNO = req.files['gstNO'];
-                                let addressProof = req.files['addressProof'];
-                                req.body.aadhar = aadhar[0].path;
-                                req.body.panCard = panCard[0].path;
-                                req.body.gstNO = gstNO[0].path;
-                                req.body.addressProof = addressProof[0].path;
-                                let result = await vendorKyc.findByIdAndUpdate({ _id: findKyc._id }, { $set: req.body }, { new: true })
-                                if (result) {
-                                        let userData1 = await User.findByIdAndUpdate({ _id: vendorData._id }, { $set: { kycStatus: kycStatus.UPLOADED, kycDocumentId: result._id } }, { new: true });
-                                        let userData2 = await User.findById({ _id: userData1._id }).populate('kycDocumentId');
-                                        return res.status(200).json({ status: 200, msg: "Kyc upload", data: userData2 })
-                                }
-                        } else {
-                                let aadhar = req.files['aadhar'];
-                                let panCard = req.files['panCard'];
-                                let gstNO = req.files['gstNO'];
-                                let addressProof = req.files['addressProof'];
-                                req.body.aadhar = aadhar[0].path;
-                                req.body.panCard = panCard[0].path;
-                                req.body.gstNO = gstNO[0].path;
-                                req.body.addressProof = addressProof[0].path;
-                                let obj = {
-                                        vendorId: vendorData._id,
-                                        aadhar: req.body.aadhar,
-                                        panCard: req.body.panCard,
-                                        gstNO: req.body.gstNO,
-                                        addressProof: req.body.addressProof,
-                                }
-                                let result = await vendorKyc(obj).save();
-                                if (result) {
-                                        let userData1 = await User.findByIdAndUpdate({ _id: vendorData._id }, { $set: { kycStatus: kycStatus.UPLOADED, kycDocumentId: result._id } }, { new: true });
-                                        let userData2 = await User.findById({ _id: userData1._id }).populate('kycDocumentId');
-                                        return res.status(200).json({ status: 200, msg: "Kyc upload", data: userData2 })
-                                }
+                        req.body.vendorId = vendorData._id;
+                        const kycData = { ...req.body, ...kycFiles };
+                        const result = await vendorKyc(kycData).save();
+                        if (result) {
+                                const userData1 = await User.findByIdAndUpdate({ _id: vendorData._id }, { $set: { kycStatus: kycStatus.UPLOADED, kycDocumentId: result._id } }, { new: true });
+                                const userData2 = await User.findById({ _id: userData1._id }).populate('kycDocumentId');
+                                return res.status(200).json({ status: 200, msg: "KYC upload", data: userData2 });
                         }
                 }
         } catch (error) {
-                console.log(error);
-                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+                console.error(error);
+                return res.status(501).send({ status: 501, message: "Server error.", data: {} });
         }
 };
 exports.KycList = async (req, res) => {
@@ -1227,8 +1217,8 @@ exports.KycList = async (req, res) => {
                 if (!vendorData) {
                         return res.status(404).json({ status: 404, message: "No data found", data: {} });
                 } else {
-                        let driverResult = await vendorKyc.find({ vendorId: vendorData._id }).sort({ "createAt": -1 })
-                        if (driverResult.length == 0) {
+                        let driverResult = await vendorKyc.findOne({ vendorId: vendorData._id })
+                        if (!driverResult) {
                                 return res.status(200).json({ status: 200, msg: "Kyc data fetch.", data: [] })
                         } else {
                                 return res.status(200).json({ status: 200, msg: "Kyc data fetch.", data: driverResult })
@@ -1367,6 +1357,75 @@ exports.changeOrderStatus = async (req, res) => {
                 }
         } catch (error) {
                 return res.status(500).send({ msg: "internal server error", error: error, });
+        }
+};
+exports.addKYB = async (req, res) => {
+        try {
+                const vendorData = await User.findOne({ _id: req.user._id });
+                if (!vendorData) return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                const findKyc = await vendorKyb.findOne({ VendorId: vendorData._id });
+                const isUBOs = req.body.UBOs === "true";
+                const isUsEIN = req.body.usEIN === "true";
+                const kybFields = [
+                        'certIncorRegi', 'excerptStateCompanyRegi', 'certIncorIncumbency', 'CertGoodStanding', 'memorandum',
+                ];
+                if (isUBOs) {
+                        const uboFields = [
+                                'uboShareholderRegi', 'uboStatOfInformation', 'uboExcerptStateCompanyRegi',
+                                'uboCertIncorIncumbency', 'uboMemorandum', 'uboTrustAgreement',
+                        ];
+                        kybFields.push(...uboFields);
+                }
+                if (!isUsEIN) {
+                        const uboFields = [
+                                'evidence',
+                        ];
+                        kybFields.push(...uboFields);
+                        console.log(kybFields);
+                }
+                const kybFiles = kybFields.reduce((acc, field) => {
+                        if (req.files[field]) acc[field] = req.files[field][0].path;
+                        return acc;
+                }, {});
+
+                if (findKyc) {
+                        const result = await vendorKyb.findByIdAndUpdate({ _id: findKyc._id }, { $set: req.body, ...kybFiles }, { new: true });
+                        if (result) {
+                                const userData1 = await User.findByIdAndUpdate({ _id: vendorData._id }, { $set: { kybStatus: kycStatus.UPLOADED, kybDocumentId: result._id } }, { new: true });
+                                const userData2 = await User.findById({ _id: userData1._id }).populate('kybDocumentId');
+                                return res.status(200).json({ status: 200, msg: "KYB upload", data: userData2 });
+                        }
+                } else {
+                        req.body.vendorId = vendorData._id;
+                        const kybData = { ...req.body, ...kybFiles };
+                        const result = await vendorKyb(kybData).save();
+                        if (result) {
+                                const userData1 = await User.findByIdAndUpdate({ _id: vendorData._id }, { $set: { kybStatus: kycStatus.UPLOADED, kybDocumentId: result._id } }, { new: true });
+                                const userData2 = await User.findById({ _id: userData1._id }).populate('kybDocumentId');
+                                return res.status(200).json({ status: 200, msg: "KYB upload", data: userData2 });
+                        }
+                }
+        } catch (error) {
+                console.error(error);
+                return res.status(501).send({ status: 501, message: "Server error.", data: {} });
+        }
+};
+exports.KybList = async (req, res) => {
+        try {
+                const vendorData = await User.findOne({ _id: req.user._id, });
+                if (!vendorData) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let driverResult = await vendorKyb.findOne({ vendorId: vendorData._id });
+                        if (!driverResult) {
+                                return res.status(200).json({ status: 200, msg: "Kyc data fetch.", data: [] })
+                        } else {
+                                return res.status(200).json({ status: 200, msg: "Kyc data fetch.", data: driverResult })
+                        }
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
 const reffralCode = async () => {

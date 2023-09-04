@@ -38,4 +38,8 @@ router.post("/wallet/sendMoney", [authJwt.verifyToken], auth.sendMoney);
 router.post("/user/createWishlist/:id", [authJwt.verifyToken], auth.createWishlist);
 router.post("/user/removeFromWishlist/:id", [authJwt.verifyToken], auth.removeFromWishlist);
 router.get("/user/myWishlist", [authJwt.verifyToken], auth.myWishlist);
+router.post("/user/ticket/createTicket", [authJwt.verifyToken], auth.createTicket);
+router.get("/user/ticket/listTicket", [authJwt.verifyToken], auth.listTicket);
+router.get('/user/ticket/:id', auth.getTicketbyId);
+router.put('/user/replyOnTicket/:id', [authJwt.verifyToken], auth.replyOnTicket);
 module.exports = router;

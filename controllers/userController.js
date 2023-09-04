@@ -25,6 +25,7 @@ const userOrders = require("../models/order/userOrders");
 const transactionModel = require("../models/transactionModel");
 const cancelReturnOrder = require("../models/order/cancelReturnOrder");
 const Wishlist = require("../models/WishlistModel");
+const ticket = require('../models/ticket');
 exports.forgetPassword = async (req, res) => {
         try {
                 const data = await User.findOne({ email: req.body.email });
@@ -1381,10 +1382,102 @@ exports.myWishlist = async (req, res, next) => {
                 return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
+exports.createTicket = async (req, res) => {
+        try {
+                const data = await User.findOne({ _id: req.user._id, });
+                if (data) {
+                        let tiketId = await ticketCode();
+                        let obj = {
+                                userId: data._id,
+                                tiketId: tiketId,
+                                title: req.body.title,
+                                description: req.body.description,
+                        }
+                        const newUser = await ticket.create(obj);
+                        if (newUser) {
+                                return res.status(200).json({ status: 200, message: "Ticket create successfully.", data: newUser });
+                        }
+                } else {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.getTicketbyId = async (req, res, next) => {
+        try {
+                const data = await User.findOne({ _id: req.user._id, });
+                if (data) {
+                        const data1 = await ticket.findById({ _id: req.params.id });
+                        if (data1) {
+                                return res.status(200).json({ status: 200, message: "Ticket found successfully.", data: data1 });
+                        } else {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        }
+                } else {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
+exports.listTicket = async (req, res) => {
+        try {
+                let findUser = await User.findOne({ _id: req.user._id });
+                if (!findUser) {
+                        return res.status(404).send({ status: 404, message: "User not found" });
+                } else {
+                        let findTicket = await ticket.find({ userId: findUser._id });
+                        if (findTicket.length == 0) {
+                                return res.status(404).send({ status: 404, message: "Data not found" });
+                        } else {
+                                res.json({ status: 200, message: 'Ticket Data found successfully.', data: findTicket });
+                        }
+                }
+        } catch (error) {
+                console.error(error);
+                return res.status(500).send({ status: 500, message: "Server error" + error.message });
+        }
+};
+exports.replyOnTicket = async (req, res) => {
+        try {
+                const data = await User.findOne({ _id: req.user._id, });
+                if (data) {
+                        const data1 = await ticket.findById({ _id: req.params.id });
+                        if (data1) {
+                                let obj = {
+                                        comment: req.body.comment,
+                                        byUser: true,
+                                        byAdmin: false,
+                                        date: Date.now(),
+                                }
+                                let update = await ticket.findByIdAndUpdate({ _id: data1._id }, { $push: { messageDetails: obj } }, { new: true })
+                                return res.status(200).json({ status: 200, message: "Ticket found successfully.", data: update });
+                        } else {
+                                return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                        }
+                } else {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
 const reffralCode = async () => {
         var digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         let OTP = '';
         for (let i = 0; i < 9; i++) {
+                OTP += digits[Math.floor(Math.random() * 36)];
+        }
+        return OTP;
+}
+const ticketCode = async () => {
+        var digits = "0123456789012345678901234567890123456789";
+        let OTP = '';
+        for (let i = 0; i < 8; i++) {
                 OTP += digits[Math.floor(Math.random() * 36)];
         }
         return OTP;

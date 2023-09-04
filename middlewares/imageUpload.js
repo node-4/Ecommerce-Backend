@@ -28,5 +28,25 @@ const E4UUpload = multer({ storage: storage9 });
 const storage10 = new CloudinaryStorage({ cloudinary: cloudinary, params: { folder: "ecommerce/offer", allowed_formats: ["jpg", "avif", "webp", "jpeg", "png", "PNG", "xlsx", "xls", "pdf", "PDF"], }, });
 const offerUpload = multer({ storage: storage10 });
 const storage11 = multer({ storage: storage })
-var cpUpload = storage11.fields([{ name: 'aadhar', maxCount: 1 }, { name: 'panCard', maxCount: 1 }, { name: 'gstNO', maxCount: 1 }, { name: 'addressProof', maxCount: 1 }]);
-module.exports = { productUpload, bannerUpload, upload, blogUpload, cpUpload, aboutusUpload, subCategoryUpload, categoryUpload, serviceUpload, E4UUpload, userProfileUpload, BrandUpload, offerUpload };
+var cpUpload = storage11.fields([{ name: 'passPort', maxCount: 1 },
+{ name: 'socialSecurityCard', maxCount: 1 },
+{ name: 'dL', maxCount: 1 },
+{ name: 'voterIdentityCard', maxCount: 1 },
+{ name: 'addressProof', maxCount: 1 }]);
+
+
+var kpUpload = storage11.fields([
+        { name: 'certIncorRegi', maxCount: 1 },
+        { name: 'excerptStateCompanyRegi', maxCount: 1 },
+        { name: 'certIncorIncumbency', maxCount: 1 },
+        { name: 'CertGoodStanding', maxCount: 1 },
+        { name: 'memorandum', maxCount: 1 },
+        { name: 'uboShareholderRegi', maxCount: 1 },
+        { name: 'uboCertIncorIncumbency', maxCount: 1 },
+        { name: 'uboStatOfInformation', maxCount: 1 },
+        { name: 'uboExcerptStateCompanyRegi', maxCount: 1 },
+        { name: 'uboMemorandum', maxCount: 1 },
+        { name: 'uboTrustAgreement', maxCount: 1 },
+        { name: 'evidence', maxCount: 1 },
+]);
+module.exports = { productUpload, bannerUpload, upload, blogUpload, cpUpload, kpUpload, aboutusUpload, subCategoryUpload, categoryUpload, serviceUpload, E4UUpload, userProfileUpload, BrandUpload, offerUpload };
