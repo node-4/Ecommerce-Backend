@@ -545,6 +545,119 @@ exports.addtocart = async (req, res) => {
                 return res.status(500).send({ message: "Internal Server error" + error.message });
         }
 };
+exports.addtocartchatgpt1 = async (req, res) => {
+        try {
+                let userData = await User.findOne({ _id: req.user._id, userType: userType.USER });
+                if (!userData) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let findCart = await cart.findOne({ userId: userData._id });
+                        if (findCart) {
+                                const findProduct = await product.findById(req.body.productId);
+                                if (!findProduct) {
+                                        return res.status(404).json({ status: 404, message: "Product not found", data: {} });
+                                }
+                                const price = findProduct.discountActive ? findProduct.discountPrice : findProduct.originalPrice;
+                                const productInfo = {
+                                        vendorId: findProduct.vendorId,
+                                        categoryId: findProduct.categoryId,
+                                        subcategoryId: findProduct.subcategoryId,
+                                        productId: findProduct._id,
+                                        productPrice: price,
+                                        quantity: req.body.quantity,
+                                        total: price * req.body.quantity,
+                                };
+                                const findVarient = await productVarient.findById(req.body.varientId);
+                                if (findVarient) {
+                                        const matchingUnit = findVarient.colorsUnits.find(unit => unit.unitId.toString() === req.body.colorsUnitId);
+                                        if (matchingUnit && findVarient.size) {
+                                                const found = findCart.products.some(el => el.productVarientId.toString() === findVarient._id.toString() && el.unitId.toString() === req.body.colorsUnitId.toString());
+                                                if (!found) {
+                                                        const obj = {
+                                                                ...productInfo,
+                                                                productVarientId: findVarient._id,
+                                                                unitId: req.body.colorsUnitId,
+                                                                unitInwords: matchingUnit.unitInwords,
+                                                        };
+                                                        await updateCartAndSendResponse(findCart, obj, res);
+                                                } else {
+                                                        const obj = {
+                                                                'products.$.productPrice': price,
+                                                                'products.$.quantity': req.body.quantity,
+                                                                'products.$.total': price * req.body.quantity,
+                                                        };
+                                                        await updateCartAndSendResponse(findCart, obj, res);
+                                                }
+                                        } else if (findProduct.size) {
+                                                const found = findCart.products.some(el => el.productVarientId.toString() === findVarient._id.toString() && el.unitId.toString() === req.body.colorsUnitId.toString());
+                                                if (!found) {
+                                                        const obj = {
+                                                                ...productInfo,
+                                                                productVarientId: findVarient._id,
+                                                                unitId: findVarient.unitId,
+                                                                unitInwords: findVarient.unitInwords,
+                                                        };
+                                                        await updateCartAndSendResponse(findCart, obj, res);
+                                                } else {
+                                                        const obj = {
+                                                                'products.$.productPrice': price,
+                                                                'products.$.quantity': req.body.quantity,
+                                                                'products.$.total': price * req.body.quantity,
+                                                        };
+                                                        await updateCartAndSendResponse(findCart, obj, res);
+                                                }
+                                        }
+                                } else {
+                                        return res.status(404).json({ status: 404, message: "Product variant not found", data: {} });
+                                }
+                        } else {
+                                const findProduct = await product.findById(req.body.productId);
+                                if (!findProduct) {
+                                        return res.status(404).json({ status: 404, message: "Product not found", data: {} });
+                                }
+                                const price = findProduct.discountActive ? findProduct.discountPrice : findProduct.originalPrice;
+                                const productInfo = {
+                                        vendorId: findProduct.vendorId,
+                                        categoryId: findProduct.categoryId,
+                                        subcategoryId: findProduct.subcategoryId,
+                                        productId: findProduct._id,
+                                        productPrice: price,
+                                        quantity: req.body.quantity,
+                                        total: price * req.body.quantity,
+                                };
+                                let obj = {
+                                        userId: userData._id,
+                                        products: [productInfo],
+                                        totalAmount: productInfo.total,
+                                        totalItem: 1,
+                                };
+                                if (findProduct.varient) {
+                                        const findVarient = await productVarient.findById(req.body.varientId);
+                                        if (findVarient && findVarient.size) {
+                                                const matchingUnit = findVarient.colorsUnits.find(unit => unit.unitId.toString() === req.body.colorsUnitId);
+                                                if (matchingUnit) {
+                                                        obj.products[0].productVarientId = findVarient._id;
+                                                        obj.products[0].unitId = req.body.colorsUnitId;
+                                                        obj.products[0].unitInwords = matchingUnit.unitInwords;
+                                                }
+                                        }
+                                } else if (findProduct.size) {
+                                        const findVarient = await productVarient.findById(req.body.varientId);
+                                        if (findVarient) {
+                                                obj.products[0].productVarientId = findVarient._id;
+                                                obj.products[0].unitId = findVarient.unitId;
+                                                obj.products[0].unitInwords = findVarient.unitInwords;
+                                        }
+                                }
+                                const updateCart = await cart.create(obj);
+                                return res.status(200).json({ message: "Product added to cart.", data: updateCart });
+                        }
+                }
+        } catch (error) {
+                console.log(error)
+                return res.status(500).send({ message: "Internal Server error" + error.message });
+        }
+};
 exports.getCart = async (req, res) => {
         try {
                 const user = await User.findById(req.user._id);
@@ -1484,3 +1597,15 @@ const ticketCode = async () => {
 }
 // const stripe = require("stripe")('pk_live_51NYCJcArS6Dr0SQYUKlqAd37V2GZMbxBL6OGM9sZi8CY6nv6H7TUJcjfMiepBmkIdSdn1bUCo855sQuKb66oiM4j00PRLQzvUc'); // live
 const stripe = require("stripe")('sk_test_51NYCJcArS6Dr0SQY0UJ5ZOoiPHQ8R5jNOyCMOkjxpl4BHkG4DcAGAU8tjBw6TSOSfimDSELa6BVyCVSo9CGLXlyX00GkGDAQFo'); // test
+
+async function updateCartAndSendResponse(findCart, obj, res) {
+        const updateCart = await cart.findOneAndUpdate({ _id: findCart._id }, { $push: { products: obj } }, { new: true });
+
+        if (updateCart) {
+                const totalAmount = updateCart.products.reduce((total, product) => total + product.total, 0);
+                const totalItem = updateCart.products.length;
+                let updateCart1 = await cart.findByIdAndUpdate({ _id: updateCart._id }, { $set: { totalAmount, totalItem } }, { new: true });
+
+                return res.status(200).send({ message: "Product added to cart.", data: updateCart1 });
+        }
+}
