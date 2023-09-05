@@ -930,6 +930,17 @@ exports.KybList = async (req, res) => {
                 return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
+exports.getIdvendorKyb = async (req, res) => {
+        try {
+                const data = await vendorKyb.findById(req.params.id)
+                if (!data) {
+                        return res.status(400).send({ msg: "not found" });
+                }
+                return res.status(200).json({ status: 200, message: "vendorKyb data found.", data: data });
+        } catch (err) {
+                return res.status(500).send({ msg: "internal server error ", error: err.message, });
+        }
+}
 exports.listProduct = async (req, res) => {
         try {
                 let query = { status: { $ne: "DELETE" } };

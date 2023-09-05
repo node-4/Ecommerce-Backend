@@ -50,6 +50,7 @@ router.put("/kyc/vendorKycVerification", [authJwt.verifyToken], auth.vendorKycVe
 router.put("/kyc/vendorKybVerification", [authJwt.verifyToken], auth.vendorKybVerification);
 router.get("/admin/KycList", [authJwt.verifyToken], auth.KycList);
 router.get("/admin/KybList", [authJwt.verifyToken], auth.KybList);
+router.get("/getIdvendorKyb/:id", auth.getIdvendorKyb);
 router.get('/admin/Product/list', auth.listProduct);
 router.delete('/admin/Product/delete/:id', authJwt.verifyToken, auth.deleteProduct);
 router.get('/admin/listProductVarient', auth.listProductVarient);
