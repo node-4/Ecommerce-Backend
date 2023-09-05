@@ -83,7 +83,7 @@ const DocumentSchema = schema({
         },
         returnPickStatus: {
                 type: String,
-                enum: ["Pending", "Accept", "Reject", "Pick"],
+                enum: ["Pending", "Accept", "Reject", "Pick", ""],
         },
         returnOrder: {
                 type: schema.Types.ObjectId,

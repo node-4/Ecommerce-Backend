@@ -18,7 +18,7 @@ const DocumentSchema = schema({
   },
   pickStatus: {
     type: String,
-    enum: ["Pending", "Accept", "Reject", "Pick"],
+    enum: ["Pending", "Accept", "Reject", "Pick", ""],
   },
   orderStatus: {
     type: String,

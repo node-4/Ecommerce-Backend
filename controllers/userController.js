@@ -1407,10 +1407,10 @@ exports.cancelReturnOrder = async (req, res, next) => {
                                         Orders: orders._id,
                                         reason: req.body.reason,
                                         orderStatus: "cancel",
-                                        pickStatus: "Pending"
+                                        pickStatus: ""
                                 }
                                 const data = await cancelReturnOrder.create(obj);
-                                let update = await order.findByIdAndUpdate({ _id: orders._id }, { $set: { returnOrder: data._id, returnStatus: "cancel", returnPickStatus: "Pending" } }, { new: true }).populate('returnOrder');
+                                let update = await order.findByIdAndUpdate({ _id: orders._id }, { $set: { returnOrder: data._id, returnStatus: "cancel", returnPickStatus: "" } }, { new: true }).populate('returnOrder');
                                 if (update) {
                                         return res.status(200).json({ message: `Order cancel Successfully.`, status: 200, data: update });
                                 }
@@ -1522,7 +1522,7 @@ exports.getTicketbyId = async (req, res, next) => {
         try {
                 const data = await User.findOne({ _id: req.user._id, });
                 if (data) {
-                        const data1 = await ticket.findById({ _id: req.params.id });
+                        const data1 = await ticket.findById({ _id: req.params.id }).populate('userId')
                         if (data1) {
                                 return res.status(200).json({ status: 200, message: "Ticket found successfully.", data: data1 });
                         } else {
@@ -1546,7 +1546,7 @@ exports.listTicket = async (req, res) => {
                         if (findTicket.length == 0) {
                                 return res.status(404).send({ status: 404, message: "Data not found" });
                         } else {
-                                res.json({ status: 200, message: 'Ticket Data found successfully.', data: findTicket });
+                                return res.json({ status: 200, message: 'Ticket Data found successfully.', data: findTicket });
                         }
                 }
         } catch (error) {
