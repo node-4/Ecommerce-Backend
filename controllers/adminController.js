@@ -912,6 +912,24 @@ exports.KycList = async (req, res) => {
                 return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
+exports.KybList = async (req, res) => {
+        try {
+                const vendorData = await User.findOne({ _id: req.user._id, });
+                if (!vendorData) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                } else {
+                        let driverResult = await vendorKyb.find({}).sort({ "createAt": -1 }).populate('vendorId')
+                        if (driverResult.length == 0) {
+                                return res.status(200).json({ status: 200, msg: "Kyb data fetch.", data: [] })
+                        } else {
+                                return res.status(200).json({ status: 20, msg: "Kyb data fetch.", data: driverResult })
+                        }
+                }
+        } catch (error) {
+                console.log(error);
+                return res.status(501).send({ status: 501, message: "server error.", data: {}, });
+        }
+};
 exports.listProduct = async (req, res) => {
         try {
                 let query = { status: { $ne: "DELETE" } };
