@@ -932,7 +932,7 @@ exports.KybList = async (req, res) => {
 };
 exports.getIdvendorKyb = async (req, res) => {
         try {
-                const data = await vendorKyb.findById(req.params.id)
+                const data = await vendorKyb.findById(req.params.id).populate('vendorId')
                 if (!data) {
                         return res.status(400).send({ msg: "not found" });
                 }
