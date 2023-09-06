@@ -469,7 +469,7 @@ exports.allDebitTransactionUser = async (req, res) => {
 };
 exports.getOrders = async (req, res, next) => {
         try {
-                const orders = await order.find({ orderStatus: "confirmed" }).populate("userId").populate("vendorId").populate("categoryId").populate("subcategoryId").populate("productId").populate({ path: "productVarientId", populate: [{ path: "color", model: "color" }] }).populate("unitId");
+                const orders = await order.find({ orderStatus: { $ne: "unconfirmed" } }).populate("userId").populate("vendorId").populate("categoryId").populate("subcategoryId").populate("productId").populate({ path: "productVarientId", populate: [{ path: "color", model: "color" }] }).populate("unitId");
                 if (orders.length == 0) {
                         return res.status(404).json({ status: 404, message: "Orders not found", data: {} });
                 }
