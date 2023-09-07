@@ -1240,7 +1240,7 @@ exports.sendMoney = async (req, res) => {
         try {
                 const data = await User.findOne({ _id: req.user._id, });
                 if (data) {
-                        let userData = await User.findOne({ _id: req.body.reciverId });
+                        let userData = await User.findOne({ phone: req.body.reciverId });
                         if (userData) {
                                 let update = await User.findByIdAndUpdate({ _id: data._id }, { $set: { wallet: data.wallet - parseInt(req.body.balance) } }, { new: true });
                                 let update1 = await User.findByIdAndUpdate({ _id: userData._id }, { $set: { wallet: userData.wallet + parseInt(req.body.balance) } }, { new: true });
