@@ -159,7 +159,7 @@ exports.socialLogin = async (req, res) => {
 exports.forgetPassword = async (req, res) => {
         const { email } = req.params;
         try {
-                const user = await User.findOne({ email: email, userType: userType.VENDOR });
+                const user = await User.findOne({ email: req.body.email, userType: req.body.userType });
                 if (!user) {
                         return res.status(404).send({ status: 404, message: "User not found" });
                 }
@@ -179,9 +179,8 @@ exports.forgetPassword = async (req, res) => {
         }
 };
 exports.resetPassword = async (req, res) => {
-        const { email } = req.params;
         try {
-                const user = await User.findOne({ email: email });
+                const user = await User.findOne({ email: req.body.email, userType: req.body.userType });
                 if (!user) {
                         return res.status(404).send({ message: "User not found" });
                 } else {
@@ -207,6 +206,9 @@ exports.signin = async (req, res) => {
                 const user = await User.findOne({ email: email, userType: userType });
                 if (!user) {
                         return res.status(404).send({ message: "user not found ! not registered" });
+                }
+                if (user.accountVerification == false) {
+                        return res.status(401).send({ message: "Your otp account verification not verifed." });
                 }
                 const isValidPassword = bcrypt.compareSync(password, user.password);
                 if (!isValidPassword) {
