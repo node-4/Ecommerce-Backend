@@ -28,7 +28,7 @@ const Wishlist = require("../models/WishlistModel");
 const ticket = require('../models/ticket');
 exports.forgetPassword = async (req, res) => {
         try {
-                const data = await User.findOne({ email: req.body.email, userType: userType });
+                const data = await User.findOne({ email: req.body.email, userType: req.body.userType });
                 if (!data) {
                         return res.status(400).send({ msg: "not found" });
                 } else {
@@ -47,7 +47,7 @@ exports.forgetPassword = async (req, res) => {
 };
 exports.changePassword = async (req, res) => {
         try {
-                const user = await User.findOne({ email: req.body.email, userType: userType });
+                const user = await User.findOne({ email: req.body.email, userType: req.body.userType });
                 if (user) {
                         if (user.otp !== req.body.otp || user.otpExpiration < Date.now()) {
                                 return res.status(400).json({ message: "Invalid OTP" });
