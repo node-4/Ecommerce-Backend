@@ -41,6 +41,9 @@ exports.registration = async (req, res) => {
                                 req.body.status = "Active";
                         }
                         req.body.password = bcrypt.hashSync(req.body.password);
+                        req.body.otp = newOTP.generate(4, { alphabets: false, upperCase: false, specialChar: false, });
+                        req.body.otpExpiration = new Date(Date.now() + 5 * 60 * 1000);
+                        req.body.accountVerification = false;
                         const userCreate = await User.create(req.body)
                         return res.status(200).send({ status: 200, message: "Registered successfully ", data: userCreate, });
                 } else {
@@ -54,7 +57,7 @@ exports.registration = async (req, res) => {
 exports.verifyOtp = async (req, res) => {
         try {
                 const { otp } = req.body;
-                const user = await User.findById({ _id: req.params.id, userType: userType.VENDOR });
+                const user = await User.findById({ _id: req.params.id });
                 if (!user) {
                         return res.status(404).send({ message: "user not found" });
                 }
@@ -62,16 +65,7 @@ exports.verifyOtp = async (req, res) => {
                         return res.status(400).json({ message: "Invalid OTP" });
                 }
                 const updated = await User.findByIdAndUpdate({ _id: user._id }, { accountVerification: true }, { new: true });
-                const accessToken = await jwt.sign({ id: user._id }, authConfig.secret, {
-                        expiresIn: authConfig.accessTokenTime,
-                });
-                let obj = {
-                        id: updated._id,
-                        otp: updated.otp,
-                        phone: updated.phone,
-                        accessToken: accessToken
-                }
-                return res.status(200).send({ status: 200, message: "logged in successfully", data: obj });
+                return res.status(200).send({ status: 200, message: "logged in successfully", data: updated });
         } catch (err) {
                 console.log(err.message);
                 return res.status(500).send({ error: "internal server error" + err.message });
