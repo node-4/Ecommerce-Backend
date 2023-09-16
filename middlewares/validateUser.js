@@ -54,7 +54,7 @@ async function userFields(req, res, next) {
         next();
     } catch (err) {
         console.log(err);
-        res.status(500).send({ message: "internal server error " + err.message })
+        return res.status(500).send({ message: "internal server error " + err.message })
     }
 }
 
