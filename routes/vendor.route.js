@@ -5,6 +5,7 @@ const { cpUpload0, upload, upload1, upload2, cpUpload, kpUpload, categoryUpload,
 const express = require("express");
 const router = express()
 router.post("/vendor/registration", auth.registration);
+router.post("/vendor/loginwithphone", auth.loginwithphone);
 router.post("/vendor/:id", auth.verifyOtp);
 router.post("/vendor/resendOtp/:id", auth.resendOTP);
 router.get("/vendor/getProfile", authJwt.verifyToken, auth.getProfile);

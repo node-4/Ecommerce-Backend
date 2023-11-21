@@ -54,6 +54,24 @@ exports.registration = async (req, res) => {
                 return res.status(500).json({ message: "Server error" });
         }
 };
+exports.loginwithphone = async (req, res) => {
+        try {
+                const { phone, userType } = req.body;
+                const user = await User.findOne({ phone: phone, userType: userType });
+                if (!user) {
+                        return res.status(404).send({ status: 404, message: "user not found ", data: {}, });
+                } else {
+                        let otp = newOTP.generate(4, { alphabets: false, upperCase: false, specialChar: false, });
+                        let otpExpiration = new Date(Date.now() + 5 * 60 * 1000);
+                        let accountVerification = false;
+                        const updated = await User.findByIdAndUpdate({ _id: user._id }, { $set: { accountVerification: accountVerification, otp: otp, otpExpiration: otpExpiration } }, { new: true });
+                        return res.status(200).send({ status: 200, message: "login successfully ", data: updated, });
+                }
+        } catch (error) {
+                console.error(error);
+                return res.status(500).json({ message: "Server error" });
+        }
+};
 exports.verifyOtp = async (req, res) => {
         try {
                 const { otp } = req.body;
@@ -64,8 +82,9 @@ exports.verifyOtp = async (req, res) => {
                 if (user.otp !== otp || user.otpExpiration < Date.now()) {
                         return res.status(400).json({ message: "Invalid OTP" });
                 }
-                const updated = await User.findByIdAndUpdate({ _id: user._id }, { accountVerification: true }, { new: true });
-                return res.status(200).send({ status: 200, message: "logged in successfully", data: updated });
+                const updated = await User.findByIdAndUpdate({ _id: user._id }, { $set: { accountVerification: true } }, { new: true });
+                const accessToken = jwt.sign({ id: updated._id }, authConfig.secret, { expiresIn: authConfig.accessTokenTime, });
+                return res.status(200).send({ status: 200, message: "logged in successfully", data: updated, accessToken: accessToken });
         } catch (err) {
                 console.log(err.message);
                 return res.status(500).send({ error: "internal server error" + err.message });
