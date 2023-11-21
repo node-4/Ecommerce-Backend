@@ -17,6 +17,7 @@ var userSchema = new schema(
                 },
                 image: {
                         type: String,
+                        default: null
                 },
                 gender: {
                         type: String,
