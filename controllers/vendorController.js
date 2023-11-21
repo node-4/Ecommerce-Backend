@@ -40,7 +40,9 @@ exports.registration = async (req, res) => {
                                 req.body.kybStatus = kycStatus.APPROVED;
                                 req.body.status = "Active";
                         }
-                        req.body.password = bcrypt.hashSync(req.body.password);
+                        if (req.body.password != (null || undefined)) {
+                                req.body.password = bcrypt.hashSync(req.body.password);
+                        }
                         req.body.otp = newOTP.generate(4, { alphabets: false, upperCase: false, specialChar: false, });
                         req.body.otpExpiration = new Date(Date.now() + 5 * 60 * 1000);
                         req.body.accountVerification = false;
