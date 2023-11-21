@@ -95,7 +95,7 @@ exports.verifyOtp = async (req, res) => {
 exports.resendOTP = async (req, res) => {
         const { id } = req.params;
         try {
-                const user = await User.findOne({ _id: id, userType: userType.VENDOR });
+                const user = await User.findOne({ _id: id, });
                 if (!user) {
                         return res.status(404).send({ status: 404, message: "User not found" });
                 }
