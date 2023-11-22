@@ -1609,7 +1609,7 @@ exports.getMostDemandedProducts = async (req, res) => {
 exports.getNewArrivalProducts = async (req, res) => {
         try {
                 const thirtyDaysAgo = new Date();
-                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 90);
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 120);
                 const newArrivalProducts = await product.find({ createdAt: { $gte: thirtyDaysAgo }, }).sort({ createdAt: -1 });
 
                 return res.status(200).json({ status: 200, message: 'New arrival products', data: newArrivalProducts, });
