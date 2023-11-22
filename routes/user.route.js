@@ -42,4 +42,7 @@ router.post("/user/ticket/createTicket", [authJwt.verifyToken], auth.createTicke
 router.get("/user/ticket/listTicket", [authJwt.verifyToken], auth.listTicket);
 router.get('/user/ticket/:id', auth.getTicketbyId);
 router.put('/user/replyOnTicket/:id', [authJwt.verifyToken], auth.replyOnTicket);
+router.get("/user/product/getMostDemandedProducts", auth.getMostDemandedProducts);
+router.get("/user/product/getNewArrivalProducts", auth.getNewArrivalProducts);
+
 module.exports = router;

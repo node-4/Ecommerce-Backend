@@ -1595,6 +1595,30 @@ const ticketCode = async () => {
         }
         return OTP;
 }
+exports.getMostDemandedProducts = async (req, res) => {
+        try {
+                const mostDemandedProducts = await product.find({})
+                        .sort({ totalRating: -1 })
+
+                return res.status(200).json({ status: 200, message: 'Most demanded products', data: mostDemandedProducts });
+        } catch (error) {
+                console.error(error);
+                return res.status(500).json({ status: 500, message: 'Error retrieving most demanded products', error: error.message, });
+        }
+};
+exports.getNewArrivalProducts = async (req, res) => {
+        try {
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 90);
+                const newArrivalProducts = await product.find({ createdAt: { $gte: thirtyDaysAgo }, }).sort({ createdAt: -1 });
+
+                return res.status(200).json({ status: 200, message: 'New arrival products', data: newArrivalProducts, });
+        } catch (error) {
+                console.error(error);
+                return res.status(500).json({ status: 500, message: 'Error retrieving new arrival products', error: error.message, });
+        }
+};
+
 // const stripe = require("stripe")('pk_live_51NYCJcArS6Dr0SQYUKlqAd37V2GZMbxBL6OGM9sZi8CY6nv6H7TUJcjfMiepBmkIdSdn1bUCo855sQuKb66oiM4j00PRLQzvUc'); // live
 const stripe = require("stripe")('sk_test_51NYCJcArS6Dr0SQY0UJ5ZOoiPHQ8R5jNOyCMOkjxpl4BHkG4DcAGAU8tjBw6TSOSfimDSELa6BVyCVSo9CGLXlyX00GkGDAQFo'); // test
 
