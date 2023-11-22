@@ -9,7 +9,7 @@ router.post("/vendor/loginwithphone", auth.loginwithphone);
 router.post("/vendor/:id", auth.verifyOtp);
 router.post("/vendor/resendOtp/:id", auth.resendOTP);
 router.get("/vendor/getProfile", authJwt.verifyToken, auth.getProfile);
-router.get("/vendor/updateProfile", authJwt.verifyToken, upload.single('image'), auth.update);
+router.put("/vendor/updateProfile", authJwt.verifyToken, upload.single('image'), auth.update);
 router.post("/vendor/social/Login", auth.socialLogin);
 router.post("/vendor/forgetPassword", auth.forgetPassword);
 router.post("/vendor/resetPassword", auth.resetPassword);
