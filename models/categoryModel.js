@@ -10,6 +10,9 @@ const categorySchema = new mongoose.Schema({
     name: {
         type: String
     },
+    image: {
+        type: String
+    },
     gender: {
         type: String,
         enum: ["men", "women", "kid"],

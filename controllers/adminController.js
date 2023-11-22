@@ -182,11 +182,14 @@ exports.createCategory = async (req, res) => {
                 if (findCategory) {
                         return res.status(409).json({ message: "category already exit.", status: 404, data: {} });
                 } else {
-                        let data;
+                        let data, image;
+                        if (req.file) {
+                                image = req.file.path
+                        }
                         if (user.userType == "VENDOR") {
-                                data = { name: req.body.name, gender: req.body.gender, vendorId: user._id, status: "Block", approvalStatus: "Pending" };
+                                data = { name: req.body.name, gender: req.body.gender, image: image, vendorId: user._id, status: "Block", approvalStatus: "Pending" };
                         } else {
-                                data = { name: req.body.name, gender: req.body.gender, status: "Active", approvalStatus: "Accept" };
+                                data = { name: req.body.name, gender: req.body.gender, image: image, status: "Active", approvalStatus: "Accept" };
                         }
                         const category = await Category.create(data);
                         return res.status(200).json({ message: "category add successfully.", status: 200, data: category });
@@ -241,6 +244,11 @@ exports.updateCategory = async (req, res) => {
                 const category = await Category.findById(id);
                 if (!category) {
                         return res.status(404).json({ message: "Category Not Found", status: 404, data: {} });
+                }
+                if (req.file) {
+                        category.image = req.file.path
+                } else {
+                        category.image = category.image
                 }
                 category.gender = req.body.gender || category.gender;
                 category.name = req.body.name || category.name;
