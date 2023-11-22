@@ -127,6 +127,35 @@ exports.getProfile = async (req, res) => {
                 return res.status(501).send({ status: 501, message: "server error.", data: {}, });
         }
 };
+exports.update = async (req, res) => {
+        try {
+                const { fullName, firstName, lastName, email, phone, password } = req.body;
+                const user = await User.findById(req.user._id);
+                if (!user) {
+                        return res.status(404).json({ status: 404, message: "No data found", data: {} });
+                }
+                user.fullName = fullName || user.fullName;
+                user.firstName = firstName || user.firstName;
+                user.lastName = lastName || user.lastName;
+                user.email = email || user.email;
+                user.phone = phone || user.phone;
+                let image;
+                if (req.file) {
+                        image = req.file.path
+                }
+                user.image = image || user.image;
+                if (req.body.password) {
+                        user.password = bcrypt.hashSync(password, 8) || user.password;
+                } else {
+                        user.password = user.password;
+                }
+                const updated = await user.save();
+                return res.status(200).send({ message: "updated", data: updated });
+        } catch (err) {
+                console.log(err);
+                return res.status(500).send({ message: "internal server error " + err.message, });
+        }
+};
 exports.socialLogin = async (req, res) => {
         try {
                 const { firstName, lastName, email, phone, userType } = req.body;
