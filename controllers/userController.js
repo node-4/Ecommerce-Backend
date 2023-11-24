@@ -1479,7 +1479,7 @@ exports.myWishlist = async (req, res, next) => {
                 }
                 let array = []
                 for (let i = 0; i < myList.products.length; i++) {
-                        const data = await product.findById(myList.products[i]._id).populate('categoryId subcategoryId').populate('colors')
+                        const data = await product.findById(myList.products[i]._id).populate('categoryId subcategoryId')
                         array.push(data)
                 }
                 let obj = {
