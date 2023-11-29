@@ -1443,6 +1443,51 @@ exports.listCod = async (req, res) => {
                 return res.status(500).send({ status: 500, message: "Server error" + error.message });
         }
 };
+exports.paginateProductSearch = async (req, res) => {
+        try {
+            const { search, fromDate, toDate, page, limit } = req.query;
+            let query = {};
+    
+            if (search != (null || undefined)) {
+                query.$or = [{ "productName": { $regex: req.query.search, $options: "i" } }];
+            }
+    
+            if ((fromDate != (null || undefined)) && (toDate != (null || undefined))) {
+                query.createdAt = { $gte: fromDate };
+            }
+    
+            if ((fromDate != (null || undefined)) && (toDate != (null || undefined))) {
+                query.createdAt = { $lte: toDate };
+            }
+    
+            if ((fromDate != (null || undefined)) && (toDate != (null || undefined))) {
+                query.$and = [
+                    { createdAt: { $gte: fromDate } },
+                    { createdAt: { $lte: toDate } },
+                ];
+            }    
+            let options = {
+                page: Number(page) || 1,
+                limit: Number(limit) || 1000,
+                sort: { createdAt: -1 },
+            };
+    
+            // Use product.paginate directly with the query and options
+            let data = await product.paginate(query, options);
+    
+            // Debug: Log the retrieved data
+            console.log("Retrieved Data:", data);
+    
+            return res.status(200).json({ status: 200, message: "Product data found.", data: data });
+        } catch (err) {
+            // Debug: Log the error
+            console.error("Error:", err);
+    
+            return res.status(500).send({ msg: "Internal server error", error: err.message });
+        }
+    };
+    
+
 const reffralCode = async () => {
         var digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         let OTP = '';
